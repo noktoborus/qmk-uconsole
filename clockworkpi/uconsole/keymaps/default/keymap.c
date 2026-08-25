@@ -74,16 +74,7 @@ const key_override_t vol_key_override =
 
 const key_override_t *key_overrides[] = {&vol_key_override};
 
-const uint16_t PROGMEM bootloader_combo[] = {KC_LALT, KC_RALT, KC_LGUI, COMBO_END};
-#ifndef DISABLE_TAP_HOLD
-const uint16_t PROGMEM tap_hold_combo[] = {LH_T, KC_HOME, COMBO_END};
-#endif
-combo_t key_combos[] = {
-  COMBO(bootloader_combo, QK_BOOT),
-#ifndef DISABLE_TAP_HOLD
-  COMBO(tap_hold_combo, KB_TAP_HOLD),
-#endif
-};
+combo_t key_combos[] = {};
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     /*
@@ -102,11 +93,11 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
      *
      */
     [LY0] = LAYOUT(
-        /* JS_0 A -> Execute
-         * JS_1 B -> Stop
+        /* JS_0 A -> WWW Forward
+         * JS_1 B -> WWW Backward
          * JS_2 Y -> Menu
          * JS_3 X -> SysRq */   // formerly JS_0,    JS_1,    JS_2,    JS_3,
-        KC_UP,   KC_DOWN, KC_LEFT, KC_RGHT, KC_EXEC, KC_STOP, KC_SYRQ, KC_MENU,
+        KC_UP,   KC_DOWN, KC_LEFT, KC_RGHT, KC_WFWD, KC_WBAK, KC_SYRQ, KC_MENU,
         KC_LSFT, KC_RSFT, KC_LCTL, KC_RCTL, KC_LALT, MS_BTN1, KC_RALT, MS_BTN2,
         MS_BTN3, KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,
 
@@ -132,25 +123,25 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
      * (Lck)(Prt)(Pau)     (Mut)(   )(   )(   )(F11)(F12)(   )
      * (   )(F1 )(F2 )(F3 )(F4 )(F5 )(F6 )(F7 )(F8 )(F9 )(F10)(Del)
      * (Cap)(   )(   )(   )(   )(   )(   )(PgU)(Ins)(   )(   )
-     * (   )(   )(   )(   )(   )(Tg2)(Hom)(End)(PgD)(   )(   )(   )
-     * (Hom)(PgD)(   )(   )(   )(   )(   )(   )
+     * (   )(   )(   )(   )(THd)(Tg2)(Hom)(End)(PgD)(   )(   )(   )
+     * (Hom)(PgD)(   )(   )(   )(Clr)(   )(   )
      * (   )(   )(Cmd)(      BlStp       )(Cmd)(   )(  )
-     * Fn+T+H = Tap-Hold Toggle
+     * THd = Tap-Hold Toggle, Clr = EEPROM Clear
      */
 
     [LY1] = LAYOUT(
-        KC_PGUP, KC_PGDN, KC_HOME, KC_END,  _______, _______, _______, _______,
-        _______, _______, _______, _______, _______, _______, _______, _______,
+        KC_PGUP, KC_PGDN, KC_HOME, KC_END,  TG(LY2), TG(LY2), TG(LY2), TG(LY2),
+        _______, _______, _______, _______, KC_LGUI, _______, KC_RGUI, _______,
         _______, _______, _______, _______, _______, _______, _______, _______,
 
         KC_PSCR, KC_PAUS, KC_MUTE, _______, _______, _______, KC_F11,  KC_F12,
         KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6,   KC_F7,   KC_F8,
         KC_F9,   KC_F10,  KB_LOCK, KC_CAPS, _______, _______, _______, _______,
         _______, _______, _______, _______, _______, _______, KC_PGUP, KC_INS,
-        _______, _______, _______, _______, _______, _______, TG(LY2), KC_HOME,
-        KC_END,  KC_PGDN, _______, _______, _______, _______, _______, _______,
+        _______, _______, _______, _______, _______, _______, _______, KC_HOME,
+        KC_END,  KC_PGDN, _______, _______, KC_CUT, KC_COPY,  KC_PSTE, _______,
         _______, _______, KC_BRID, KC_BRIU, _______, _______, _______, _______,
-        KC_DEL,  _______, _______, _______, BL_STEP, _______, _______, _______
+        KC_DEL,  _______, EE_CLR, EE_CLR, BL_STEP, _______, _______, _______
     ),
 
     /*
@@ -179,62 +170,10 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     ),
 };
 
-static bool is_locked = false;
-
-// Gamepad Y/B mouse arrow emulation state
-static bool y_pressed = false;
-static bool b_pressed = false;
-static bool y_action_triggered = false;
-static bool b_action_triggered = false;
-static uint16_t y_press_time = 0;
-static uint16_t b_press_time = 0;
-
-static bool up_as_mouse = false;
-static bool down_as_mouse = false;
-static bool left_as_mouse = false;
-static bool right_as_mouse = false;
-
-
-// D-pad joystick state. Left/Right share axis 1, Up/Down share axis 0.
-// These directions behave like discrete keys rather than a physical d-pad, so
-// we use last-input priority: when both opposing keys are held, the most
-// recently pressed one wins, and releasing it falls back to the opposite key
-// if it is still held.
-static bool js_left_held  = false;
-static bool js_right_held = false;
-static bool js_up_held    = false;
-static bool js_down_held  = false;
-// Most recently pressed direction on each axis (+1 / -1), 0 if neither held.
-static int8_t js_h_last = 0;  // axis 1: -1 = left, +1 = right
-static int8_t js_v_last = 0;  // axis 0: -1 = up,   +1 = down
-
-static void js_update_axes(void) {
-  // Horizontal (axis 1): last-pressed wins while both held.
-  if (js_left_held && js_right_held) {
-    joystick_set_axis(1, js_h_last * 127);
-  } else if (js_left_held) {
-    joystick_set_axis(1, -127);
-  } else if (js_right_held) {
-    joystick_set_axis(1, 127);
-  } else {
-    joystick_set_axis(1, 0);
-  }
-
-  // Vertical (axis 0): last-pressed wins while both held.
-  if (js_up_held && js_down_held) {
-    joystick_set_axis(0, js_v_last * 127);
-  } else if (js_up_held) {
-    joystick_set_axis(0, -127);
-  } else if (js_down_held) {
-    joystick_set_axis(0, 127);
-  } else {
-    joystick_set_axis(0, 0);
-  }
-}
+volatile bool is_locked = false;
 
 // Extern from trackball.c to control scroll mode
 extern volatile bool select_button_pressed;
-extern volatile bool select_button_scrolled;
 extern volatile bool precision_mode;
 
 // EEPROM Configuration
@@ -249,7 +188,6 @@ keyboard_config_t keyboard_config;
 
 // Tap-hold timing tracking
 #define TAP_HOLD_TIMEOUT 200  // milliseconds
-#define TAP_HOLD_KEY_COUNT 47
 
 // Mapping of tap-hold keycodes to their base keycodes
 static const uint16_t tap_hold_map[][2] = {
@@ -267,15 +205,11 @@ static const uint16_t tap_hold_map[][2] = {
   {LH_COMM, KC_COMM},  {LH_DOT, KC_DOT},
 };
 
-#ifndef DISABLE_TAP_HOLD
-static uint16_t tap_hold_key_press_times[TAP_HOLD_KEY_COUNT] = {0};
-static bool tap_hold_passthrough[TAP_HOLD_KEY_COUNT] = {false};
-static bool tap_hold_key_pressed[TAP_HOLD_KEY_COUNT] = {false};
-#endif
+static uint16_t tap_hold_key_press_times[47] = {0};  // Track press time for each tap-hold key (36 letters/numbers + 11 special chars)
 
 // Helper function to get base keycode from tap-hold keycode
 static uint16_t get_base_keycode(uint16_t keycode) {
-  for (int i = 0; i < TAP_HOLD_KEY_COUNT; i++) {
+  for (int i = 0; i < 47; i++) {
     if (tap_hold_map[i][0] == keycode) {
       return tap_hold_map[i][1];
     }
@@ -288,7 +222,6 @@ static bool is_tap_hold_key(uint16_t keycode) {
   return (keycode >= LH_A && keycode <= LH_9) || (keycode >= LH_GRV && keycode <= LH_DOT);
 }
 
-#ifndef DISABLE_TAP_HOLD
 // Helper function to get the index of a tap-hold key
 static int get_tap_hold_index(uint16_t keycode) {
   if (keycode >= LH_A && keycode <= LH_Z) {
@@ -302,35 +235,6 @@ static int get_tap_hold_index(uint16_t keycode) {
   }
   return -1;
 }
-
-static bool is_tap_hold_passthrough_active(void) {
-  uint8_t active_mods = get_mods() | get_weak_mods() | get_oneshot_mods();
-  return (active_mods & MOD_MASK_CSAG) || layer_state_is(LY1);
-}
-
-static void resolve_pending_tap_hold_keys(uint16_t current_keycode, uint32_t current_time) {
-  int current_index = is_tap_hold_key(current_keycode) ? get_tap_hold_index(current_keycode) : -1;
-  for (int i = 0; i < TAP_HOLD_KEY_COUNT; i++) {
-    if (tap_hold_key_pressed[i] && i != current_index) {
-      uint16_t base_key = tap_hold_map[i][1];
-      uint16_t elapsed = current_time - tap_hold_key_press_times[i];
-
-      if (elapsed < TAP_HOLD_TIMEOUT) {
-        // Tap - send key as-is (lowercase/number)
-        register_code(base_key);
-        unregister_code(base_key);
-      } else {
-        // Hold - send shift + key (uppercase/shifted symbol)
-        register_code(KC_LSFT);
-        register_code(base_key);
-        unregister_code(base_key);
-        unregister_code(KC_LSFT);
-      }
-      tap_hold_key_pressed[i] = false;
-    }
-  }
-}
-#endif
 
 void keyboard_post_init_user(void) {
   keyboard_config.raw = eeconfig_read_user();
@@ -348,224 +252,86 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     return false;
   }
 
-#ifndef DISABLE_TAP_HOLD
-  if (record->event.pressed) {
-    resolve_pending_tap_hold_keys(keycode, record->event.time);
-  }
-#endif
-
   // Handle tap-hold keys
   if (is_tap_hold_key(keycode)) {
     uint16_t base_key = get_base_keycode(keycode);
 
-#ifdef DISABLE_TAP_HOLD
-    if (record->event.pressed) {
-      register_code(base_key);
-    } else {
-      unregister_code(base_key);
-    }
-    return false;
-#else
-    int index = get_tap_hold_index(keycode);
-    bool passthrough_active = record->event.pressed && is_tap_hold_passthrough_active();
-
-    if (!keyboard_config.tap_hold_enabled || passthrough_active || tap_hold_passthrough[index]) {
+    // If tap-hold is disabled, send key normally
+    if (!keyboard_config.tap_hold_enabled) {
       if (record->event.pressed) {
-        tap_hold_passthrough[index] = passthrough_active;
         register_code(base_key);
       } else {
         unregister_code(base_key);
-        tap_hold_passthrough[index] = false;
       }
       return false;
     }
 
     // Tap-hold is enabled: use timing-based logic
+    int index = get_tap_hold_index(keycode);
     if (record->event.pressed) {
       // Key pressed - record the timestamp
       tap_hold_key_press_times[index] = record->event.time;
-      tap_hold_key_pressed[index] = true;
     } else {
       // Key released - determine if tap or hold
-      if (tap_hold_key_pressed[index]) {
-        uint16_t elapsed = record->event.time - tap_hold_key_press_times[index];
+      uint16_t elapsed = record->event.time - tap_hold_key_press_times[index];
 
-        if (elapsed < TAP_HOLD_TIMEOUT) {
-          // Tap - send key as-is (lowercase/number)
-          register_code(base_key);
-          unregister_code(base_key);
-        } else {
-          // Hold - send shift + key (uppercase/shifted symbol)
-          register_code(KC_LSFT);
-          register_code(base_key);
-          unregister_code(base_key);
-          unregister_code(KC_LSFT);
-        }
-        tap_hold_key_pressed[index] = false;
+      if (elapsed < TAP_HOLD_TIMEOUT) {
+        // Tap - send key as-is (lowercase/number)
+        register_code(base_key);
+        unregister_code(base_key);
+      } else {
+        // Hold - send shift + key (uppercase/shifted symbol)
+        register_code(KC_LSFT);
+        register_code(base_key);
+        unregister_code(base_key);
+        unregister_code(KC_LSFT);
       }
     }
     return false;  // Don't let QMK handle this key
-#endif
   }
 
   switch (keycode) {
-    case KC_MENU:
-      if (record->event.pressed) {
-        y_pressed = true;
-        y_press_time = record->event.time;
-        y_action_triggered = false;
+  case KB_LOCK: {
+    uint16_t code = is_locked ? KC_WAKE : KC_SLEP;
+    if (record->event.pressed) {
+      is_locked = !is_locked;
+      if (is_locked) {
+        backlight_disable();
       } else {
-        y_pressed = false;
-        if (!layer_state_is(LY2)) {
-          uint16_t elapsed = record->event.time - y_press_time;
-          if (!y_action_triggered && elapsed < TAP_HOLD_TIMEOUT) {
-            register_code(KC_MENU);
-            unregister_code(KC_MENU);
-          }
-        }
+        backlight_enable();
       }
-      return false;
-    case KC_STOP:
-      if (record->event.pressed) {
-        b_pressed = true;
-        b_press_time = record->event.time;
-        b_action_triggered = false;
-      } else {
-        b_pressed = false;
-        if (!layer_state_is(LY2)) {
-          uint16_t elapsed = record->event.time - b_press_time;
-          if (!b_action_triggered && elapsed < TAP_HOLD_TIMEOUT) {
-            register_code(KC_STOP);
-            unregister_code(KC_STOP);
-          }
-        }
-      }
-      return false;
-    case KC_UP:
-      if (record->event.pressed) {
-        if ((y_pressed || b_pressed) && !layer_state_is(LY2)) {
-          y_action_triggered = true;
-          b_action_triggered = true;
-          up_as_mouse = true;
-          register_code(MS_UP);
-          return false;
-        }
-      } else {
-        if (up_as_mouse) {
-          unregister_code(MS_UP);
-          up_as_mouse = false;
-          return false;
-        }
-      }
-      return true;
-    case KC_DOWN:
-      if (record->event.pressed) {
-        if ((y_pressed || b_pressed) && !layer_state_is(LY2)) {
-          y_action_triggered = true;
-          b_action_triggered = true;
-          down_as_mouse = true;
-          register_code(MS_DOWN);
-          return false;
-        }
-      } else {
-        if (down_as_mouse) {
-          unregister_code(MS_DOWN);
-          down_as_mouse = false;
-          return false;
-        }
-      }
-      return true;
-    case KC_LEFT:
-      if (record->event.pressed) {
-        if ((y_pressed || b_pressed) && !layer_state_is(LY2)) {
-          y_action_triggered = true;
-          b_action_triggered = true;
-          left_as_mouse = true;
-          register_code(MS_LEFT);
-          return false;
-        }
-      } else {
-        if (left_as_mouse) {
-          unregister_code(MS_LEFT);
-          left_as_mouse = false;
-          return false;
-        }
-      }
-      return true;
-    case KC_RGHT:
-      if (record->event.pressed) {
-        if ((y_pressed || b_pressed) && !layer_state_is(LY2)) {
-          y_action_triggered = true;
-          b_action_triggered = true;
-          right_as_mouse = true;
-          register_code(MS_RGHT);
-          return false;
-        }
-      } else {
-        if (right_as_mouse) {
-          unregister_code(MS_RGHT);
-          right_as_mouse = false;
-          return false;
-        }
-      }
-      return true;
-    case KB_LOCK:
-      if (record->event.pressed) {
-        is_locked = !is_locked;
-      }
-      return false;
+      register_code(code);
+    } else {
+      unregister_code(code);
+    }
+    return false;
+  }
     case KB_TAP_HOLD:
-#ifndef DISABLE_TAP_HOLD
       if (record->event.pressed) {
         keyboard_config.tap_hold_enabled = !keyboard_config.tap_hold_enabled;
         eeconfig_update_user(keyboard_config.raw);
       }
-#endif
       return false;
     case MO(LY1):
-      // Fn: only perform normal layer switching; do not toggle scroll mode
-      return true;  // Allow normal layer switching to continue
-    case KC_SELECT: case JS_4:
+    case KC_SELECT:
       // Select key enables scroll mode while held (preserve tap behavior)
       select_button_pressed = record->event.pressed;
-      if (record->event.pressed) {
-          select_button_scrolled = false;
-      } else {
-          if (!select_button_scrolled) {
-              if (keycode == KC_SELECT) {
-                  register_code(KC_SELECT);
-                  unregister_code(KC_SELECT);
-              } else {
-                  register_joystick_button(keycode - JS_0);
-                  unregister_joystick_button(keycode - JS_0);
-              }
-          }
-      }
-      return false;
+      return true;
     case JS_LEFT:
-      js_left_held = record->event.pressed;
-      if (record->event.pressed) js_h_last = -1;
-      js_update_axes();
+      joystick_set_axis(1, record->event.pressed ? -127 : 0);
       return false;
     case JS_RGHT:
-      js_right_held = record->event.pressed;
-      if (record->event.pressed) js_h_last = 1;
-      js_update_axes();
+      joystick_set_axis(1, record->event.pressed ? 127 : 0);
       return false;
     case JS_UP:
-      js_up_held = record->event.pressed;
-      if (record->event.pressed) js_v_last = -1;
-      js_update_axes();
+      joystick_set_axis(0, record->event.pressed ? -127 : 0);
       return false;
     case JS_DOWN:
-      js_down_held = record->event.pressed;
-      if (record->event.pressed) js_v_last = 1;
-      js_update_axes();
+      joystick_set_axis(0, record->event.pressed ? 127 : 0);
       return false;
     case MS_BTN3:
       if (record->event.pressed && select_button_pressed) {
           precision_mode = !precision_mode;
-          select_button_scrolled = true;
           return false;
       }
       return true;

@@ -44,15 +44,13 @@ Game mode can be activited & toggled by `Fn`+`G`. Gamepad function is mapped to 
 | Select | `JS_4` (Select) | Select  (`KC_SELECT`)
 | Start  | `JS_5` (Start)  | Super   (`KC_LEFT_GUI`)
 
-### Tap-Hold Keys
-Most alphabetic keys, numbers, and special character keys support tap-hold functionality. Modifier and Fn combinations bypass tap-hold (e.g. `Ctrl+A` behaves normally). 
-*Note: Game keys and the D-pad do not have tap-hold behavior to preserve their responsiveness.*
+* **Gamepad mode:** Press **Fn+(X)** or Fn+any gamepad key
 
-| Key Category | Tap (< 200ms) | Hold (≥ 200ms) | Examples |
-|---|---|---|---|
-| **Letters** | Lowercase | Uppercase | `a` ↔ `A` |
-| **Numbers** | Number | Shifted Symbol | `1` ↔ `!` |
-| **Special Chars**| Base Character | Shifted Symbol | `` ` `` ↔ `~`, `[` ↔ `{`, `-` ↔ `_` |
+* **Factory Reset:** Press **Fn+Fn** to reset EEPROM to factory defaults
+
+* **Trackball Scrolling:** Hold the **Select** key and move the trackball to scroll.
+    * Move Up/Down for Vertical Scroll
+    * Move Left/Right for Horizontal Scroll
 
 ### D-Pad & Directional Keys
 The physical directional keys change functions based on the active mode:
@@ -143,8 +141,7 @@ If you already have QMK installed and want to update:
 
 2. **Enter bootloader mode:**
    
-When dfu-util says `waiting for device, exit with ctrl-C`, press **Left Alt**,
-**Right Alt**, and **Start**, all **simultaneously**.
+When dfu-util says `waiting for device, exit with ctrl-C`, press **Left Fn** and **Right Fn**.
 
 After installing the QMK firmware, the bootloader has a 2-3 second window for
 uploading firmware. Otherwise it will verify the existing firmware and continue
