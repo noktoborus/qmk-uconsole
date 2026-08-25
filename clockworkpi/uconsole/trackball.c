@@ -23,6 +23,8 @@ volatile bool select_button_scrolled =
     false; // set when trackball moves while select is pressed
 volatile bool precision_mode = false; // toggled from keymap
 
+extern volatile bool is_locked;
+
 static int8_t distances[AXIS_NUM] = {0};
 static rate_meter_t rate_meters[AXIS_NUM] = {0};
 static glider_t gliders[AXIS_NUM] = {0};
@@ -50,6 +52,9 @@ static float rateToVelocityCurve(float input, float acceleration_scale) {
 }
 
 static void trackball_move(uint8_t axis, int8_t direction) {
+  if (is_locked)
+    return;
+
   // Always update distances[], regardless of the mode
   distances[axis] += direction;
 
