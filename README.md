@@ -174,6 +174,26 @@ If the keyboard remains non-functional, don't panic! Follow these steps:
 
 4. **Verify:** Once successful, your keyboard should be responsive again. You can then re-flash QMK if needed.
 
+## 🛠️ Building in a Container (podman compose)
+
+`compose.yaml` provides two services; the repository is mounted into the containers, so results land in your checkout and are owned by your user.
+
+* **`build`** — compiles the firmware with the QMK toolchain (fetches the `qmk_firmware` submodule on first run):
+  ```sh
+  podman compose run --rm build              # default + no_tap_hold
+  podman compose run --rm build default      # a single keymap
+  ```
+  Produces `clockworkpi_uconsole_default.bin` and `clockworkpi_uconsole_no_tap_hold.bin` in the repository root.
+
+* **`claude`** — an interactive [Claude Code](https://code.claude.com) session with the same toolchain, so the agent can build the firmware itself:
+  ```sh
+  podman compose run --rm claude
+  podman compose run --rm claude --resume    # extra arguments go to `claude`
+  ```
+  Log in on first start, or export `ANTHROPIC_API_KEY` beforehand. Login and history are kept in the `claude-home` volume.
+
+Rebuild the images with `podman compose build` to update the toolchain or Claude Code. Requires `podman-compose` (the services use `userns_mode: keep-id`).
+
 ## Other Resources
 
 ### Improving Keypress & Backlight

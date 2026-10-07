@@ -1,0 +1,59 @@
+# Images for podman compose (see compose.yaml in the repository root).
+#
+#   target "build"  - QMK toolchain, compiles the uConsole firmware
+#   target "claude" - the same toolchain plus the Claude Code agent
+
+ARG QMK_IMAGE=ghcr.io/qmk/qmk_cli:latest
+
+FROM ${QMK_IMAGE} AS build
+
+# The base image ships the GitHub CLI apt repository with an outdated signing
+# key, which makes every `apt-get update` fail. gh itself stays installed;
+# only its repository is dropped.
+RUN grep -rlZ 'cli\.github\.com' /etc/apt/sources.list.d/ \
+      | xargs -0r rm -f
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends ca-certificates git make \
+ && rm -rf /var/lib/apt/lists/*
+
+COPY build.sh /usr/local/bin/qmk-uconsole-build
+RUN chmod 0755 /usr/local/bin/qmk-uconsole-build
+
+# The repository is bind-mounted at /src. Containers may run under an
+# arbitrary uid (podman keep-id), so HOME points to a world-writable place
+# and git is told to trust the mounted checkout regardless of its owner.
+RUN install -d -m 1777 /home/agent
+ENV HOME=/home/agent \
+    QMK_HOME=/src/qmk_firmware \
+    GIT_CONFIG_COUNT=1 \
+    GIT_CONFIG_KEY_0=safe.directory \
+    GIT_CONFIG_VALUE_0=*
+
+WORKDIR /src
+CMD ["qmk-uconsole-build"]
+
+
+FROM build AS claude
+
+# Claude Code from Anthropic's signed apt repository (stable channel).
+# Fingerprint: https://code.claude.com/docs/en/setup#install-with-linux-package-managers
+ARG CLAUDE_CODE_CHANNEL=stable
+ARG CLAUDE_CODE_KEY_FPR=31DDDE24DDFAB679F42D7BD2BAA929FF1A7ECACE
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends curl gnupg less procps ripgrep \
+ && install -d -m 0755 /etc/apt/keyrings \
+ && curl -fsSL https://downloads.claude.ai/keys/claude-code.asc -o /etc/apt/keyrings/claude-code.asc \
+ && GNUPGHOME="$(mktemp -d)" gpg --show-keys --with-colons /etc/apt/keyrings/claude-code.asc \
+      | grep -q "^fpr:*${CLAUDE_CODE_KEY_FPR}:" \
+ && echo "deb [signed-by=/etc/apt/keyrings/claude-code.asc] https://downloads.claude.ai/claude-code/apt/${CLAUDE_CODE_CHANNEL} ${CLAUDE_CODE_CHANNEL} main" \
+      > /etc/apt/sources.list.d/claude-code.list \
+ && apt-get update \
+ && apt-get install -y --no-install-recommends claude-code \
+ && rm -rf /var/lib/apt/lists/*
+
+# Updates come from rebuilding the image, not from inside the container.
+ENV DISABLE_AUTOUPDATER=1
+
+ENTRYPOINT ["claude"]
+CMD []

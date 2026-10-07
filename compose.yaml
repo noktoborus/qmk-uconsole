@@ -1,0 +1,48 @@
+# podman compose for building the firmware and running Claude Code.
+#
+#   podman compose run --rm build                 # build the default keymap
+#   podman compose run --rm build default         # build one keymap
+#   podman compose run --rm claude                # interactive Claude Code session
+#   podman compose run --rm claude --resume       # extra args go to `claude`
+#
+# The repository is mounted at /src, so build results and the agent's edits
+# land in this checkout, owned by your user (userns keep-id).
+
+name: qmk-uconsole
+
+# podman-compose puts services into a pod by default; a pod shares one user
+# namespace and is incompatible with per-container userns_mode: keep-id.
+x-podman:
+  in_pod: false
+
+services:
+  build:
+    build:
+      context: container
+      dockerfile: Containerfile
+      target: build
+    image: localhost/qmk-uconsole-build
+    userns_mode: keep-id
+    volumes:
+      - .:/src:Z
+
+  claude:
+    build:
+      context: container
+      dockerfile: Containerfile
+      target: claude
+    image: localhost/qmk-uconsole-claude
+    userns_mode: keep-id
+    stdin_open: true
+    tty: true
+    environment:
+      # Optional: passed through only when set on the host. Without it,
+      # Claude Code asks you to log in on first start.
+      - ANTHROPIC_API_KEY
+    volumes:
+      - .:/src:Z
+      # Login, settings and session history survive container restarts.
+      - claude-home:/home/agent
+
+volumes:
+  claude-home:

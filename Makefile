@@ -4,10 +4,16 @@ SUDO = sudo
 USB_ID = 1eaf:0003
 
 .PHONY: default
-default: clockworkpi_uconsole_default.bin clockworkpi_uconsole_no_tap_hold.bin
+# Build the firmware in the podman container (see compose.yaml)
+default:
+	podman-compose run --rm build
+
+# Build with a QMK toolchain installed on the host
+.PHONY: local
+local: clockworkpi_uconsole_default.bin clockworkpi_uconsole_no_tap_hold.bin
 
 .PHONY: reflash
-reflash: clockworkpi_uconsole_default.bin
+reflash: default
 	# dfu-util exits nonzero even without errors
 	sh -c '$(SUDO) dfu-util -w -d $(USB_ID) -a 2 -D clockworkpi_uconsole_default.bin -R || true'
 
