@@ -46,23 +46,42 @@ void keyboard_post_init_kb(void) {
     keyboard_post_init_user();
 }
 
-// Shift + volume down sends volume up
+// Shift + volume down sends volume up. Like a QMK key override, Shift is taken
+// out of the report while volume up is held: hosts (e.g. sway bindings) only
+// act on a plain volume key, not on Shift + volume.
 static bool process_record_volume(uint16_t keycode, keyrecord_t *record) {
-    static bool volume_up_held = false;
-    if (keycode != KC_VOLD) {
+    static bool    volume_up_held   = false;
+    static uint8_t suppressed_shift = 0; // Shift mods removed while it is held
+
+    switch (keycode) {
+    case KC_LSFT:
+    case KC_RSFT:
+        // Shift released meanwhile: don't bring it back afterwards
+        if (!record->event.pressed) {
+            suppressed_shift &= ~MOD_BIT(keycode);
+        }
+        return true;
+    case KC_VOLD:
+        if (record->event.pressed && (get_mods() & MOD_MASK_SHIFT)) {
+            suppressed_shift = get_mods() & MOD_MASK_SHIFT;
+            del_mods(suppressed_shift);
+            send_keyboard_report();
+            register_code(KC_VOLU);
+            volume_up_held = true;
+            return false;
+        }
+        if (!record->event.pressed && volume_up_held) {
+            unregister_code(KC_VOLU);
+            volume_up_held = false;
+            add_mods(suppressed_shift);
+            send_keyboard_report();
+            suppressed_shift = 0;
+            return false;
+        }
+        return true;
+    default:
         return true;
     }
-    if (record->event.pressed && (get_mods() & MOD_MASK_SHIFT)) {
-        register_code(KC_VOLU);
-        volume_up_held = true;
-        return false;
-    }
-    if (!record->event.pressed && volume_up_held) {
-        unregister_code(KC_VOLU);
-        volume_up_held = false;
-        return false;
-    }
-    return true;
 }
 
 bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
