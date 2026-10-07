@@ -199,13 +199,42 @@ builds and flashes it, and `make layout` redraws the keymap picture.
 
 * **Firmware** (`.github/workflows/firmware.yml`) builds the firmware with the
   same image and `container/build.sh` on every push and pull request and keeps
-  the `.bin` as a build artifact. Pushing a tag `v*` (e.g. `git tag v1.0 &&
-  git push origin v1.0`) also creates a GitHub release with
-  `clockworkpi_uconsole_default.bin` and `via.json`.
-* **Pages** (`.github/workflows/pages.yml`) publishes the keyboard tester
-  (`index.html`) together with `images/layout.svg` and `via.json` on pushes to
-  `main` that change them, or when run manually. In the repository settings,
-  *Pages → Source* must be set to *GitHub Actions*.
+  the `.bin` as a build artifact. Pushing a tag `v*` also creates a GitHub
+  release (see *Making a release* below).
+* **Pages** (`.github/workflows/pages.yml`) publishes the keyboard tester: the
+  site is `index.html` from the repository root. It runs on pushes to `main`
+  that change `index.html`, or manually (*Actions → Pages → Run workflow*). In
+  the repository settings, *Pages → Source* must be set to *GitHub Actions*.
+
+### Making a release
+
+A release is made by pushing a tag whose name starts with `v`; the tag can
+point at a commit on any branch.
+
+1. Make sure the commit to release builds: `make`, or a green *Firmware* run
+   on GitHub for that commit.
+2. Tag it and push the tag:
+
+   ```sh
+   git tag -a v1.0 -m "v1.0"
+   git push origin v1.0
+   ```
+
+3. The *Firmware* workflow builds the tagged commit and creates the release
+   `v1.0` with `clockworkpi_uconsole_default.bin` and `via.json` attached and
+   notes generated from the commits and pull requests since the previous tag.
+   Follow it under *Actions*; the release appears under *Releases* when the
+   run finishes, and its notes can be edited there.
+
+If the build fails, fix it, then move the tag to the new commit and push it
+again (delete the release first if it was already created):
+
+```sh
+git tag -d v1.0
+git push origin :refs/tags/v1.0
+git tag -a v1.0 -m "v1.0"
+git push origin v1.0
+```
 
 ### Keymap picture
 

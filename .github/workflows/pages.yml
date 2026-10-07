@@ -1,5 +1,5 @@
-# Publishes the keyboard tester (index.html) with the keymap picture and the
-# VIA definition to GitHub Pages.
+# Publishes the keyboard tester to GitHub Pages: the site is index.html from
+# the root of the repository.
 name: Pages
 
 on:
@@ -7,8 +7,6 @@ on:
     branches: ["main"]
     paths:
       - index.html
-      - images/**
-      - clockworkpi/uconsole/via.json
       - .github/workflows/pages.yml
   workflow_dispatch:
 
@@ -33,10 +31,8 @@ jobs:
 
       - name: Assemble site
         run: |
-          mkdir -p _site/images
+          mkdir -p _site
           cp index.html _site/
-          cp images/layout.svg _site/images/
-          cp clockworkpi/uconsole/via.json _site/
 
       - uses: actions/configure-pages@v6
 
