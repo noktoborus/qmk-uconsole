@@ -48,6 +48,28 @@ is empty and free to configure in VIA.
 | **`Fn` + `Esc`** | Lock (`KB_LOCK`): keys and trackball are ignored, backlight off, Sleep is sent. Press again to unlock (sends Wake); while locked only `Fn` and `Fn` + `Esc` work |
 | **`Fn` + `Fn`** | Reboot into the bootloader for flashing |
 
+### Layer indicator (waybar)
+
+The firmware prints the active layer (`uconsole:layer N`) on the QMK console on
+every layer change and every 5 s. The console is a separate HID interface, so
+this doesn't interfere with VIA. [`tools/uconsole-layer`](tools/uconsole-layer)
+follows it and prints JSON for a waybar custom module; the base layer gives an
+empty text, so the module is only visible while another layer is active:
+
+```json
+"custom/keyboard-layer": {
+    "exec": "/path/to/qmk-uconsole/tools/uconsole-layer",
+    "return-type": "json",
+    "restart-interval": 5
+}
+```
+
+Each layer also sets a CSS class (`base`, `fn`, `gamepad`, `free`, or
+`disconnected` while the keyboard is missing), e.g.
+`#custom-keyboard-layer.gamepad { color: #8ec07c; }`. Layer names can be passed
+as arguments: `uconsole-layer Base Fn Game Free`. The script needs the same
+`/dev/hidraw` access as `uconsole-backlight` (see the udev rule below).
+
 ### Backlight
 `Fn` + `Space` cycles the backlight through 10 brightness levels and off.
 The **Backlight** tab in VIA configures:

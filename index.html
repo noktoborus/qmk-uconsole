@@ -396,6 +396,64 @@
             width: 40px;
         }
 
+        /* Active layer from the keyboard console (WebHID) */
+        #layer-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+            font-size: 13px;
+            color: #333;
+        }
+
+        #layer-name {
+            display: inline-block;
+            min-width: 70px;
+            padding: 2px 8px;
+            border: 1px solid #999;
+            border-radius: 4px;
+            background: #f0f0f0;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        #layer-name.layer-1 {
+            background: #ffe0b0;
+        }
+
+        #layer-name.layer-2 {
+            background: #c8ecc9;
+        }
+
+        #layer-name.layer-3 {
+            background: #d6e4ff;
+        }
+
+        #hid-connect {
+            font-family: inherit;
+            font-size: 12px;
+        }
+
+        #hid-status {
+            color: #666;
+            font-size: 12px;
+        }
+
+        /* Fn layer active: emphasize the Fn legends */
+        .keyboard-container.layer-1 .layer2-label {
+            color: #c00;
+            font-weight: bold;
+        }
+
+        /* Gamepad layer active: outline the gamepad controls */
+        .keyboard-container.layer-2 .d-pad .key,
+        .keyboard-container.layer-2 .shoulders .key,
+        .keyboard-container.layer-2 .abxy .key:not(.key-middle-mouse),
+        .keyboard-container.layer-2 [data-key="QK_JOYSTICK_BUTTON_4"],
+        .keyboard-container.layer-2 [data-key="QK_JOYSTICK_BUTTON_5"] {
+            outline: 2px solid #4CAF50;
+        }
+
         /* Log area for debugging */
         #log {
             margin-top: 20px;
@@ -409,18 +467,24 @@
 
     <h1>uConsole Keyboard Tester</h1>
 
+    <div id="layer-bar">
+        <span>Layer: <span id="layer-name">?</span></span>
+        <button id="hid-connect" type="button">Connect keyboard</button>
+        <span id="hid-status"></span>
+    </div>
+
     <div class="keyboard-container">
         <div class="top-section">
             <div class="d-pad">
-                <div class="key key-up" data-code="ArrowUp">↑</div>
-                <div class="key key-left" data-code="ArrowLeft">←</div>
-                <div class="key key-right" data-code="ArrowRight">→</div>
-                <div class="key key-down" data-code="ArrowDown">↓</div>
+                <div class="key key-up" data-code="ArrowUp"><span class="layer2-label">PgU</span>↑</div>
+                <div class="key key-left" data-code="ArrowLeft"><span class="layer2-label">Home</span>←</div>
+                <div class="key key-right" data-code="ArrowRight"><span class="layer2-label">End</span>→</div>
+                <div class="key key-down" data-code="ArrowDown"><span class="layer2-label">PgD</span>↓</div>
             </div>
 
             <div class="shoulders">
-                <div class="key" data-mouse="1">L</div>
-                <div class="key" data-mouse="2">R</div>
+                <div class="key" data-mouse="1" data-key="QK_JOYSTICK_BUTTON_6">L</div>
+                <div class="key" data-mouse="2" data-key="QK_JOYSTICK_BUTTON_7">R</div>
             </div>
 
             <div class="abxy">
@@ -431,7 +495,7 @@
                 <div class="key key-middle-mouse" data-mouse="3">
                     <div class="scroll-indicator scroll-up">▲</div>
                     <div class="scroll-indicator scroll-left">◄</div>
-                    M
+                    <span class="layer2-label">Prec</span>M
                     <div class="scroll-indicator scroll-right">►</div>
                     <div class="scroll-indicator scroll-down">▼</div>
                 </div>
@@ -444,7 +508,7 @@
             <div class="key w-1-5" data-key="QK_JOYSTICK_BUTTON_5"><span class="layer2-label">Pause</span>Start</div>
 
             <div class="spacer" style="width: 100px;"></div>
-            <div class="key" data-key="vol">Vol</div>
+            <div class="key" data-key="vol"><span class="layer2-label">Mute</span>Vol</div>
             <div class="key" data-code="BracketLeft"><span class="shift-label">{</span>[</div>
             <div class="key" data-code="BracketRight"><span class="shift-label">}</span>]</div>
             <div class="key" data-code="Slash"><span class="shift-label">?</span>/</div>
@@ -500,7 +564,7 @@
             <div class="key" data-code="KeyS">S</div>
             <div class="key" data-code="KeyD">D</div>
             <div class="key" data-code="KeyF">F</div>
-            <div class="key" data-code="KeyG">G</div>
+            <div class="key" data-code="KeyG"><span class="layer2-label">Game</span>G</div>
             <div class="key" data-code="KeyH"><span class="layer2-label">Home</span>H</div>
             <div class="key" data-code="KeyJ"><span class="layer2-label">End</span>J</div>
             <div class="key" data-code="KeyK"><span class="layer2-label">PgDn</span>K</div>
@@ -512,35 +576,35 @@
         <div class="row">
             <div class="key w-1-5" data-code="ShiftLeft">Shift</div>
             <div class="key" data-code="KeyZ">Z</div>
-            <div class="key" data-code="KeyX">X</div>
-            <div class="key" data-code="KeyC">C</div>
-            <div class="key" data-code="KeyV">V</div>
+            <div class="key" data-code="KeyX"><span class="layer2-label">Cut</span>X</div>
+            <div class="key" data-code="KeyC"><span class="layer2-label">Copy</span>C</div>
+            <div class="key" data-code="KeyV"><span class="layer2-label">Paste</span>V</div>
             <div class="key" data-code="KeyB">B</div>
             <div class="key" data-code="KeyN">N</div>
             <div class="key" data-code="KeyM">M</div>
-            <div class="key" data-code="Comma"><span class="layer2-label">Dim</span><span class="shift-label">
-                    << /span>,</div>
+            <div class="key" data-code="Comma"><span class="layer2-label">Dim</span><span class="shift-label">&lt;</span>,</div>
             <div class="key" data-code="Period"><span class="layer2-label">Bright</span><span
                     class="shift-label">></span>.</div>
             <div class="key w-1-5" data-code="ShiftRight">Shift</div>
         </div>
 
         <div class="row">
-            <div class="key" data-key="fn">Fn</div>
+            <div class="key" data-key="fn"><span class="layer2-label">Boot</span>Fn</div>
             <div class="key" data-code="ControlLeft">Ctrl</div>
             <div class="key" data-code="AltLeft"><span class="layer2-label">Cmd</span>Alt</div>
-            <div class="key w-space" data-code="Space">Space</div>
-            <div class="key" data-code="AltRight">Alt</div>
+            <div class="key w-space" data-code="Space"><span class="layer2-label">Light</span>Space</div>
+            <div class="key" data-code="AltRight"><span class="layer2-label">Cmd</span>Alt</div>
             <div class="key" data-code="ControlRight">Ctrl</div>
-            <div class="key" data-key="fn">Fn</div>
+            <div class="key" data-key="fn"><span class="layer2-label">Boot</span>Fn</div>
         </div>
     </div>
 
     <div id="log">Press keys to test...</div>
 
     <div style="margin-top: 10px; color: #323232; font-size: 11px; text-align: left; max-width: 600px;">
-        <strong>Note:</strong> FN keys highlight when Layer 2 functions are active (F1-F12, Delete, Caps, etc.),
-        indicating the momentary layer switch is engaged.
+        <strong>Note:</strong> red legends are the Fn layer. With <em>Connect keyboard</em> (Chrome/Chromium,
+        WebHID) the page shows the active layer reported by the keyboard; otherwise the FN keys
+        highlight when Fn layer keys (F1-F12, Delete, Caps, etc.) are received.
     </div>
 
     <script>
@@ -668,7 +732,7 @@
                 const gamepad = gamepads[gamepadIndex];
 
                 if (gamepad) {
-                    // Check each button (0-3 for X, Y, B, A)
+                    // Check each button (0-3 A B X Y, 4-5 Select Start, 6-7 L R)
                     gamepad.buttons.forEach((button, index) => {
                         const isPressed = button.pressed;
                         const wasPressed = gamepadButtonStates[index] || false;
@@ -681,7 +745,9 @@
                                 2: 'QK_JOYSTICK_BUTTON_2', // X
                                 3: 'QK_JOYSTICK_BUTTON_3', // Y
                                 4: 'QK_JOYSTICK_BUTTON_4', // Select
-                                5: 'QK_JOYSTICK_BUTTON_5'  // Start
+                                5: 'QK_JOYSTICK_BUTTON_5', // Start
+                                6: 'QK_JOYSTICK_BUTTON_6', // L
+                                7: 'QK_JOYSTICK_BUTTON_7'  // R
                             };
 
                             const buttonKey = buttonMap[index];
@@ -706,7 +772,7 @@
                         const isUConsoleGamepad = gamepad.id && (
                             gamepad.id.toLowerCase().includes('uconsole') ||
                             gamepad.id.toLowerCase().includes('clockwork') ||
-                            gamepad.id.toLowerCase().includes('feed')
+                            gamepad.id.toLowerCase().includes('434b')
                         );
 
                         if (isUConsoleGamepad) {
@@ -1096,6 +1162,92 @@
         document.addEventListener('contextmenu', (e) => {
             e.preventDefault();
         });
+
+        // Active layer: the firmware prints "uconsole:layer N" on the QMK console
+        // (HID usage page 0xFF31) on every change and every 5 s.
+        const LAYER_NAMES = ['Base', 'Fn', 'Gamepad', 'Free'];
+        const CONSOLE_FILTER = { vendorId: 0x434b, productId: 0x5543, usagePage: 0xff31, usage: 0x74 };
+        const keyboardContainer = document.querySelector('.keyboard-container');
+        const layerName = document.getElementById('layer-name');
+        const hidConnect = document.getElementById('hid-connect');
+        const hidStatus = document.getElementById('hid-status');
+        let consoleText = '';
+
+        function showLayer(layer) {
+            layerName.textContent = LAYER_NAMES[layer] || `Layer ${layer}`;
+            layerName.className = layer === null ? '' : `layer-${layer}`;
+            for (let i = 0; i < LAYER_NAMES.length; i++) {
+                keyboardContainer.classList.toggle(`layer-${i}`, i === layer);
+            }
+            // Fn held: the keyboard reports layer 1
+            keys.forEach(el => {
+                if (el.getAttribute('data-key') === 'fn') el.classList.toggle('active', layer === 1);
+            });
+        }
+
+        function isKeyboardConsole(device) {
+            return device.vendorId === CONSOLE_FILTER.vendorId &&
+                device.productId === CONSOLE_FILTER.productId &&
+                device.collections.some(c => c.usagePage === CONSOLE_FILTER.usagePage);
+        }
+
+        function onConsoleReport(e) {
+            // NUL padded chunks of the printed text
+            const bytes = new Uint8Array(e.data.buffer, e.data.byteOffset, e.data.byteLength);
+            for (const b of bytes) {
+                if (b === 0) break;
+                consoleText += String.fromCharCode(b);
+            }
+            const lines = consoleText.split('\n');
+            consoleText = lines.pop();
+            for (const line of lines) {
+                const match = line.match(/uconsole:layer (\d+)/);
+                if (match) showLayer(Number(match[1]));
+            }
+        }
+
+        async function openConsole(device) {
+            try {
+                if (!device.opened) await device.open();
+                device.removeEventListener('inputreport', onConsoleReport);
+                device.addEventListener('inputreport', onConsoleReport);
+                hidStatus.textContent = 'connected, waiting for the layer (up to 5 s)';
+                hidConnect.hidden = true;
+            } catch (err) {
+                hidStatus.textContent = `can't open the keyboard: ${err.message}`;
+            }
+        }
+
+        if ('hid' in navigator) {
+            hidConnect.addEventListener('click', async () => {
+                try {
+                    const devices = await navigator.hid.requestDevice({ filters: [CONSOLE_FILTER] });
+                    const device = devices.find(isKeyboardConsole);
+                    if (device) await openConsole(device);
+                } catch (err) {
+                    hidStatus.textContent = err.message;
+                }
+            });
+            // Reconnect to a keyboard the page was already allowed to use
+            navigator.hid.getDevices().then(devices => {
+                const device = devices.find(isKeyboardConsole);
+                if (device) openConsole(device);
+            });
+            navigator.hid.addEventListener('connect', e => {
+                if (isKeyboardConsole(e.device)) openConsole(e.device);
+            });
+            navigator.hid.addEventListener('disconnect', e => {
+                if (!isKeyboardConsole(e.device)) return;
+                consoleText = '';
+                showLayer(null);
+                layerName.textContent = '?';
+                hidStatus.textContent = 'keyboard disconnected';
+                hidConnect.hidden = false;
+            });
+        } else {
+            hidConnect.disabled = true;
+            hidStatus.textContent = 'layer display needs WebHID (Chrome/Chromium)';
+        }
 
         // Click listener for manual testing (touchscreen support)
         keys.forEach(k => {

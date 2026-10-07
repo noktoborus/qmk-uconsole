@@ -81,17 +81,40 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
 // so e.g. TG(5) would leave a dead keyboard. Ignore layers that don't exist.
 #define EXISTING_LAYERS_MASK ((layer_state_t)((1UL << DYNAMIC_KEYMAP_LAYER_COUNT) - 1))
 
+// The active (highest) layer is reported on the QMK console as
+// "uconsole:layer N" on every change and every LAYER_REPORT_INTERVAL ms, so a
+// listener started later (tools/uconsole-layer) learns it too. The console is
+// its own HID interface (usage page 0xFF31), separate from VIA's raw HID.
+#define LAYER_REPORT_INTERVAL 5000
+
+static uint8_t  reported_layer = UINT8_MAX;
+static uint32_t last_layer_report = 0;
+
+static void report_layer(layer_state_t layers, layer_state_t default_layers) {
+    const uint8_t layer = get_highest_layer(layers | default_layers);
+    if (layer != reported_layer || timer_elapsed32(last_layer_report) >= LAYER_REPORT_INTERVAL) {
+        uprintf("uconsole:layer %u\n", layer);
+        reported_layer    = layer;
+        last_layer_report = timer_read32();
+    }
+}
+
 layer_state_t layer_state_set_kb(layer_state_t state) {
-    return layer_state_set_user(state & EXISTING_LAYERS_MASK);
+    state = layer_state_set_user(state & EXISTING_LAYERS_MASK);
+    report_layer(state, default_layer_state);
+    return state;
 }
 
 layer_state_t default_layer_state_set_kb(layer_state_t state) {
     state &= EXISTING_LAYERS_MASK;
-    return default_layer_state_set_user(state ? state : 1); // keep layer 0
+    state = default_layer_state_set_user(state ? state : 1); // keep layer 0
+    report_layer(layer_state, state);
+    return state;
 }
 
 void housekeeping_task_kb(void) {
     backlight_fx_task();
+    report_layer(layer_state, default_layer_state);
     housekeeping_task_user();
 }
 
