@@ -1,8 +1,13 @@
 # Images for podman compose (see compose.yaml in the repository root).
 #
-#   target "build"  - QMK toolchain, compiles the uConsole firmware; also
-#                     keymap-drawer for the keymap picture (make layout)
-#   target "claude" - the same toolchain plus the Claude Code agent
+#   target "build"  - compiles the uConsole firmware: QMK CLI and ARM GCC
+#                     (from the qmk_cli base image), git, make, and
+#                     keymap-drawer (`keymap`) for the keymap picture
+#   target "claude" - "build" plus the Claude Code agent, Node.js (e.g.
+#                     `node --check` for the tester page script), curl, gnupg,
+#                     less, procps and ripgrep
+#
+# Host side: podman, podman-compose and make; dfu-util for flashing.
 
 ARG QMK_IMAGE=ghcr.io/qmk/qmk_cli:latest
 
@@ -48,7 +53,7 @@ FROM build AS claude
 ARG CLAUDE_CODE_CHANNEL=stable
 ARG CLAUDE_CODE_KEY_FPR=31DDDE24DDFAB679F42D7BD2BAA929FF1A7ECACE
 RUN apt-get update \
- && apt-get install -y --no-install-recommends curl gnupg less procps ripgrep \
+ && apt-get install -y --no-install-recommends curl gnupg less procps ripgrep nodejs \
  && install -d -m 0755 /etc/apt/keyrings \
  && curl -fsSL https://downloads.claude.ai/keys/claude-code.asc -o /etc/apt/keyrings/claude-code.asc \
  && GNUPGHOME="$(mktemp -d)" gpg --show-keys --with-colons /etc/apt/keyrings/claude-code.asc \

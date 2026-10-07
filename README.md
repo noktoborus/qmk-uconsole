@@ -164,6 +164,17 @@ If that doesn't help, force the bootloader in hardware:
 
 `compose.yaml` provides two services; the repository is mounted into the containers, so results land in your checkout and are owned by your user.
 
+**Needed on the host:** `podman`, `podman-compose` and `make`; `dfu-util` for
+flashing (`make reflash` builds in the container but flashes from the host,
+which has the USB access).
+
+**What the images contain:**
+
+| Image | Tools |
+|---|---|
+| `build` (based on `ghcr.io/qmk/qmk_cli`) | QMK CLI and ARM GCC toolchain, `git`, `make`, [keymap-drawer](https://github.com/caksoylar/keymap-drawer) 0.23.0 (`keymap`) |
+| `claude` | everything from `build`, plus Claude Code, Node.js (`node`), `curl`, `gnupg`, `less`, `procps` (`ps`, `top`), `ripgrep` (`rg`) |
+
 * **`build`** — compiles the firmware with the QMK toolchain (fetches the `qmk_firmware` submodule on first run):
   ```sh
   podman compose run --rm build              # default keymap
