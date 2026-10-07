@@ -1,6 +1,7 @@
 # Images for podman compose (see compose.yaml in the repository root).
 #
-#   target "build"  - QMK toolchain, compiles the uConsole firmware
+#   target "build"  - QMK toolchain, compiles the uConsole firmware; also
+#                     keymap-drawer for the keymap picture (make layout)
 #   target "claude" - the same toolchain plus the Claude Code agent
 
 ARG QMK_IMAGE=ghcr.io/qmk/qmk_cli:latest
@@ -14,8 +15,14 @@ RUN grep -rlZ 'cli\.github\.com' /etc/apt/sources.list.d/ \
       | xargs -0r rm -f
 
 RUN apt-get update \
- && apt-get install -y --no-install-recommends ca-certificates git make \
+ && apt-get install -y --no-install-recommends ca-certificates git make python3-venv \
  && rm -rf /var/lib/apt/lists/*
+
+# keymap-drawer renders images/layout.svg from the default keymap
+ARG KEYMAP_DRAWER_VERSION=0.23.0
+RUN python3 -m venv /opt/keymap-drawer \
+ && /opt/keymap-drawer/bin/pip install --no-cache-dir "keymap-drawer==${KEYMAP_DRAWER_VERSION}" \
+ && ln -s /opt/keymap-drawer/bin/keymap /usr/local/bin/keymap
 
 COPY build.sh /usr/local/bin/qmk-uconsole-build
 RUN chmod 0755 /usr/local/bin/qmk-uconsole-build

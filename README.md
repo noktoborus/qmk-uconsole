@@ -20,61 +20,33 @@ Test your uConsole keyboard layout and functionality with our interactive keyboa
 
 This web-based tool provides:
 * **Visual Feedback:** See which keys are being pressed in real-time
-* **Layer Detection:** Shows Layer 2 (Fn) key combinations
+* **Layer Detection:** Shows Fn layer key combinations
 * **D-Pad & Gamepad Testing:** Test arrow keys, joystick buttons (X, Y, A, B), and mouse buttons (L, R, Middle)
 * **Scroll & Cursor Tracking:** Visualize trackball movement and scroll events
 
 Perfect for verifying your firmware installation and familiarizing yourself with the uConsole's unique keyboard layout!
 
-## 🎹 Special Key Behaviors
+## 🎹 Keymap
 
 > [!IMPORTANT]
 > **Keyboard Locale / OS Layout:** This firmware expects the host operating system's keyboard layout to be set to **US English (ANSI)**. If your OS is configured with a different layout, some key outputs—specifically special characters—might not display correctly or map to different symbols.
 
-* **Remapped A/B/X/Y in keyboard mode:**
+![Default keymap: base, Fn and gamepad layers](images/layout.svg)
 
-Gamepad function is mapped to the following table:
+Hold **Fn** for the Fn layer. ▽ keys fall through to the layer below. Layer 3
+is empty and free to configure in VIA.
 
-| Key    | Gamepad mode    | Keyboard mode
-|--------|-----------------|--------------
-| A      | `JS_A` (button 0) | Browser Forward (`KC_WWW_FORWARD`)
-| B      | `JS_B` (button 1) | Browser Back    (`KC_WWW_BACK`)
-| X      | `JS_X` (button 2) | System Request (`KC_SYSTEM_REQUEST`)
-| Y      | `JS_Y` (button 3) | Menu    (`KC_MENU`)
-| Select | `JS_SEL` (button 4) | Select + trackball scroll (`SEL_SCRL`)
-| Start  | `JS_STA` (button 5) | Super   (`KC_LEFT_GUI`)
-| L      | `JS_L` (button 6) | Left mouse button  (`MS_BTN1`)
-| R      | `JS_R` (button 7) | Right mouse button (`MS_BTN2`)
+### Special keys and combos
 
-* **Gamepad mode:** Press **Fn+G** to turn it on, and **Fn+G** again to turn it off
-
-* **Trackball Scrolling:** Hold the **Select** key and move the trackball to scroll
-  (the key is `SEL_SCRL`: it sends Select and makes the ball scroll while held).
-    * Move Up/Down for Vertical Scroll
-    * Move Left/Right for Horizontal Scroll
-
-### D-Pad & Directional Keys
-The physical directional keys change functions based on the active mode:
-
-| Active Mode | Modifier Held | D-Pad Function |
-|---|---|---|
-| **Keyboard** (Layer 0) | None | Standard arrow keys (`Up`, `Down`, `Left`, `Right`) |
-| **Gamepad** (Layer 2) | None | Virtual joystick axes (X and Y axes) |
-
-### Trackball & Cursor Settings
-Advanced trackball features:
-
-| Action | Function | Description |
-|---|---|---|
-| **Hold `Select` or `Fn` + Move Trackball** | Trackball Scrolling | Move Up/Down for vertical, Left/Right for horizontal scroll |
-| **`Fn` + Click Trackball** | Precision Cursor Mode | Toggles between normal and precision (reduced) cursor speeds (`TB_PREC` keycode, can be reassigned in VIA) |
-
-### System & Feature Toggles
-Use the following shortcuts to toggle hardware modes and special features:
-
-| Shortcut / Key Combo | Function | Description |
-|---|---|---|
-| **`Fn` + `G`** | Gamepad Mode | Toggles Layer 2 (maps A/B/X/Y and D-Pad for gaming) |
+| Keys | Action |
+|---|---|
+| **`Fn` + `G`** | Gamepad mode on/off (layer 2): the D-pad drives the joystick axes; A/B/X/Y, Select/Start and L/R are joystick buttons 0-7 |
+| **Hold `Select` or `Fn` + move trackball** | Scroll: up/down vertical, left/right horizontal. Select (`SEL_SCRL`) still sends Select |
+| **`Fn` + trackball click** | Precision cursor mode on/off (`TB_PREC`) |
+| **`Shift` + `Vol−`** | Volume up |
+| **`Fn` + `Space`** | Next backlight level |
+| **`Fn` + `Esc`** | Lock (`KB_LOCK`): keys and trackball are ignored, backlight off, Sleep is sent. Press again to unlock (sends Wake); while locked only `Fn` and `Fn` + `Esc` work |
+| **`Fn` + `Fn`** | Reboot into the bootloader for flashing |
 
 ### Backlight
 `Fn` + `Space` cycles the backlight through 10 brightness levels and off.
@@ -114,7 +86,9 @@ and direction, and for each layer whether the ball moves the cursor or scrolls
 are saved to EEPROM.
 
 Keymaps and macros edited in VIA are stored in EEPROM. Flashing a firmware
-built on a different date resets them to the defaults compiled into it.
+built on a different date, or one with a changed default keymap or settings
+layout, resets them (and the trackball and backlight settings) to the defaults
+compiled into it.
 
 ## 🎯 Flashing
 
@@ -138,8 +112,8 @@ sudo dfu-util -w -d 1eaf:0003 -a 2 -D clockworkpi_uconsole_default.bin -R
 ```
 
 When it prints `waiting for device`, press **Fn+Fn** (hold one Fn, press the
-other) to reboot the keyboard into the bootloader. `make reflash` runs the
-same command. Any key assigned `QK_BOOT` in VIA works the same way.
+other) to reboot the keyboard into the bootloader. `make reflash` builds the
+firmware in the container and then runs the same command. Any key assigned `QK_BOOT` in VIA works the same way.
 
 ### First flash from the stock ClockworkPi firmware
 
@@ -183,6 +157,34 @@ If that doesn't help, force the bootloader in hardware:
   Log in on first start, or export `ANTHROPIC_API_KEY` beforehand. Login and history are kept in the `claude-home` volume.
 
 Rebuild the images with `podman compose build` to update the toolchain or Claude Code. Requires `podman-compose` (the services use `userns_mode: keep-id`).
+
+The `Makefile` wraps the common tasks: `make` builds the firmware in the container,
+`make local` builds it with a QMK toolchain installed on the host, `make reflash`
+builds and flashes it, and `make layout` redraws the keymap picture.
+
+### Keymap picture
+
+`images/layout.svg` is drawn by
+[keymap-drawer](https://github.com/caksoylar/keymap-drawer) from:
+
+* `clockworkpi/uconsole/keymaps/default/keymap.json` - the default keymap;
+* `clockworkpi/uconsole/keyboard.json` - physical key positions and sizes;
+* `clockworkpi/uconsole/keymap-drawer.yaml` - legends for custom keycodes
+  (`JS_*`, `TB_*`, `SEL_SCRL`, ...) and other keys.
+
+After changing any of them, redraw the picture and commit it together with the
+change:
+
+```sh
+podman compose build build   # once: the build image includes keymap-drawer
+make layout                  # writes images/layout.svg
+```
+
+`make layout` runs `make images/layout.svg` in the build container. With
+keymap-drawer installed locally (`pip install keymap-drawer==0.23.0`) you can run
+`make images/layout.svg` directly. Layer names and the drawn layers (Base, Fn,
+Gamepad; the empty layer 3 is skipped) are set in the `images/layout.svg` rule
+of the `Makefile`.
 
 ## Other Resources
 
