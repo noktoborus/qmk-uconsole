@@ -85,7 +85,7 @@ static void trackball_config_apply(void) {
   wheel_denom = MAX(1, WHEEL_DENOM_DEFAULT * 100 / c->scroll_speed);
 }
 
-static void trackball_config_save(void) {
+void trackball_config_save(void) {
   eeconfig_update_kb_datablock(&trackball_config, 0, sizeof(trackball_config));
 }
 
@@ -466,9 +466,6 @@ bool trackball_via_command(uint8_t command_id, uint8_t value_id, uint8_t *value)
     case id_custom_get_value:
       *value = (trackball_config.scroll_layers & bit) ? 1 : 0;
       break;
-    case id_custom_save:
-      trackball_config_save();
-      break;
     }
     return true;
   }
@@ -484,9 +481,6 @@ bool trackball_via_command(uint8_t command_id, uint8_t value_id, uint8_t *value)
     break;
   case id_custom_get_value:
     *value = *field;
-    break;
-  case id_custom_save:
-    trackball_config_save();
     break;
   }
   return true;

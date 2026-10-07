@@ -40,14 +40,14 @@ static void config_apply(void) {
   config.boost_fade = clamp_u8(config.boost_fade, 1, 50);
 }
 
-static void config_save(void) {
+void backlight_fx_config_save(void) {
   eeconfig_update_kb_datablock(&config, BACKLIGHT_FX_CONFIG_OFFSET, sizeof(config));
 }
 
 void backlight_fx_config_reset(void) {
   config = defaults;
   config_apply();
-  config_save();
+  backlight_fx_config_save();
 }
 
 void backlight_fx_config_load(void) {
@@ -178,9 +178,6 @@ bool backlight_fx_via_command(uint8_t command_id, uint8_t value_id, uint8_t *val
     break;
   case id_custom_get_value:
     *value = *field;
-    break;
-  case id_custom_save:
-    config_save();
     break;
   }
   return true;

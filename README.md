@@ -98,7 +98,8 @@ KERNEL=="hidraw*", ATTRS{idVendor}=="434b", ATTRS{idProduct}=="5543", MODE="0660
 
 ### VIA
 The firmware supports [VIA](https://usevia.app) with 4 layers: layers 0-2 are
-the defaults described above, layer 3 is empty and free to configure. The
+the defaults described above, layer 3 is empty and free to configure.
+VIA also offers layer keys for layers 4-9; the firmware ignores them. The
 keyboard is not in the VIA repository, so load its definition manually: in
 VIA open **Settings**, enable **Show Design tab**, then in **Design** load
 [`clockworkpi/uconsole/via.json`](clockworkpi/uconsole/via.json). The

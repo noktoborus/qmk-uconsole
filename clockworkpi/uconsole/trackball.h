@@ -68,7 +68,8 @@ extern trackball_config_t trackball_config;
 
 void trackball_config_reset(void);
 void trackball_config_load(void);
+void trackball_config_save(void);
 
-/* VIA custom values of the "Trackball" menu; false if value_id isn't ours. */
+/* VIA set/get of the "Trackball" menu values; false if value_id isn't ours. */
 bool trackball_via_command(uint8_t command_id, uint8_t value_id, uint8_t *value);
 #endif /* TRACKBALL_H */

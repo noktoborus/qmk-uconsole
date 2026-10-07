@@ -22,6 +22,7 @@ typedef struct {
 
 void backlight_fx_config_reset(void);
 void backlight_fx_config_load(void);
+void backlight_fx_config_save(void);
 
 /* Call on user activity; key presses also trigger the boost. */
 void backlight_fx_activity(bool key_press);
@@ -29,5 +30,5 @@ void backlight_fx_activity(bool key_press);
 /* Drives the PWM; call from housekeeping_task_kb(). */
 void backlight_fx_task(void);
 
-/* VIA custom values of the "Backlight" menu; false if value_id isn't ours. */
+/* VIA set/get of the "Backlight" menu values; false if value_id isn't ours. */
 bool backlight_fx_via_command(uint8_t command_id, uint8_t value_id, uint8_t *value);

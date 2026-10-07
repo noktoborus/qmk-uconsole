@@ -201,7 +201,7 @@
           "label": "Layers",
           "content": [
             {
-              "label": "Layer 0 (base)",
+              "label": "Layer 0",
               "type": "dropdown",
               "options": [
                 "Cursor",
@@ -214,7 +214,7 @@
               ]
             },
             {
-              "label": "Layer 1 (Fn)",
+              "label": "Layer 1",
               "type": "dropdown",
               "options": [
                 "Cursor",
@@ -227,7 +227,7 @@
               ]
             },
             {
-              "label": "Layer 2 (gamepad)",
+              "label": "Layer 2",
               "type": "dropdown",
               "options": [
                 "Cursor",
