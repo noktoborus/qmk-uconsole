@@ -195,6 +195,18 @@ The `Makefile` wraps the common tasks: `make` builds the firmware in the contain
 `make local` builds it with a QMK toolchain installed on the host, `make reflash`
 builds and flashes it, and `make layout` redraws the keymap picture.
 
+### GitHub Actions
+
+* **Firmware** (`.github/workflows/firmware.yml`) builds the firmware with the
+  same image and `container/build.sh` on every push and pull request and keeps
+  the `.bin` as a build artifact. Pushing a tag `v*` (e.g. `git tag v1.0 &&
+  git push origin v1.0`) also creates a GitHub release with
+  `clockworkpi_uconsole_default.bin` and `via.json`.
+* **Pages** (`.github/workflows/pages.yml`) publishes the keyboard tester
+  (`index.html`) together with `images/layout.svg` and `via.json` on pushes to
+  `main` that change them, or when run manually. In the repository settings,
+  *Pages → Source* must be set to *GitHub Actions*.
+
 ### Keymap picture
 
 `images/layout.svg` is drawn by

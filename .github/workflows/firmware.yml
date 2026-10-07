@@ -1,0 +1,44 @@
+# Builds the firmware on every push and pull request; a pushed tag v* also
+# publishes a GitHub release with the firmware and the VIA definition.
+name: Firmware
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # Same image and build script as `make` / podman compose
+    container: ghcr.io/qmk/qmk_cli:latest
+    permissions:
+      contents: write # create the release on tags
+    env:
+      QMK_UCONSOLE_DIR: ${{ github.workspace }}
+      QMK_HOME: ${{ github.workspace }}/qmk_firmware
+      # The workspace is owned by another uid inside the container
+      GIT_CONFIG_COUNT: 1
+      GIT_CONFIG_KEY_0: safe.directory
+      GIT_CONFIG_VALUE_0: "*"
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build firmware
+        run: sh container/build.sh
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: clockworkpi_uconsole_default
+          path: clockworkpi_uconsole_default.bin
+
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v3
+        with:
+          generate_release_notes: true
+          files: |
+            clockworkpi_uconsole_default.bin
+            clockworkpi/uconsole/via.json
