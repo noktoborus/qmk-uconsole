@@ -29,24 +29,22 @@ Perfect for verifying your firmware installation and familiarizing yourself with
 ## 🎹 Special Key Behaviors
 
 > [!IMPORTANT]
-> **Keyboard Locale / OS Layout:** This firmware expects the host operating system's keyboard layout to be set to **US English (ANSI)**. If your OS is configured with a different layout, some key outputs—specifically special characters and tap-hold keys—might not display correctly or map to different symbols.
+> **Keyboard Locale / OS Layout:** This firmware expects the host operating system's keyboard layout to be set to **US English (ANSI)**. If your OS is configured with a different layout, some key outputs—specifically special characters—might not display correctly or map to different symbols.
 
 * **Remapped A/B/X/Y in keyboard mode:**
 
-Game mode can be activited & toggled by `Fn`+`G`. Gamepad function is mapped to the following table:
+Gamepad function is mapped to the following table:
 
 | Key    | Gamepad mode    | Keyboard mode
 |--------|-----------------|--------------
-| A      | `JS_0` (A)      | Execute (`KC_EXECUTE`)
-| B      | `JS_1` (B)      | Stop    (`KC_STOP`)
+| A      | `JS_0` (A)      | Browser Forward (`KC_WWW_FORWARD`)
+| B      | `JS_1` (B)      | Browser Back    (`KC_WWW_BACK`)
 | X      | `JS_2` (X)      | System Request (`KC_SYSTEM_REQUEST`)
 | Y      | `JS_3` (Y)      | Menu    (`KC_MENU`)
 | Select | `JS_4` (Select) | Select  (`KC_SELECT`)
 | Start  | `JS_5` (Start)  | Super   (`KC_LEFT_GUI`)
 
 * **Gamepad mode:** Press **Fn+(X)** or Fn+any gamepad key
-
-* **Factory Reset:** Press **Fn+Fn** to reset EEPROM to factory defaults
 
 * **Trackball Scrolling:** Hold the **Select** key and move the trackball to scroll.
     * Move Up/Down for Vertical Scroll
@@ -58,7 +56,6 @@ The physical directional keys change functions based on the active mode:
 | Active Mode | Modifier Held | D-Pad Function |
 |---|---|---|
 | **Keyboard** (Layer 0) | None | Standard arrow keys (`Up`, `Down`, `Left`, `Right`) |
-| **Keyboard** (Layer 0) | `Y` or `B` Button | Mouse cursor movement (quick trackball alternative) |
 | **Gamepad** (Layer 2) | None | Virtual joystick axes (X and Y axes) |
 
 ### Trackball & Cursor Settings
@@ -74,105 +71,69 @@ Use the following shortcuts to toggle hardware modes and special features:
 
 | Shortcut / Key Combo | Function | Description |
 |---|---|---|
-| **`Fn` + `G`** | Gamepad Mode | Toggles Layer 2 (maps A/B/X/Y and D-Pad for gaming) |
-| **`Fn` + `T` + `H`** | Tap-Hold Toggle | Turns tap-hold on/off (Default: **disabled**, saves to EEPROM) * |
-| **Double-Tap Letter**| Quick Duplication| Quickly produces two lowercase characters (e.g. `aa`) |
-| **`LAlt`+`RAlt`+`Start`**| DFU Mode | Enters bootloader mode for firmware flashing |
+| **`Fn` + `A`/`B`/`X`/`Y`** | Gamepad Mode | Toggles Layer 2 (maps A/B/X/Y and D-Pad for gaming) |
 
-*\* Note: In the `clockworkpi_uconsole_no_tap_hold.bin` build, the tap-hold feature is completely compiled out, so `Fn+T+H` does nothing.*
+### Backlight
+`Fn` + `Space` cycles the backlight through 10 brightness levels and off.
 
-## 🎯 Installation Guide
+### VIA
+The firmware supports [VIA](https://usevia.app) with 4 layers: layers 0-2 are
+the defaults described above, layer 3 is empty and free to configure. The
+keyboard is not in the VIA repository, so load its definition manually: in
+VIA open **Settings**, enable **Show Design tab**, then in **Design** load
+[`clockworkpi/uconsole/via.json`](clockworkpi/uconsole/via.json). The
+joystick and lock keycodes are available under **Custom**.
 
-**⚠️ WARNING:**
-Don't install a firmware image without another input method, like an external
-keyboard or SSH connection, or you won't have any way to fix it if it fails.
-The uConsole keyboard is an independent USB device, so even if it has issues
-the rest of the unit is unaffected.
+Keymaps and macros edited in VIA are stored in EEPROM. Flashing a firmware
+built on a different date resets them to the defaults compiled into it.
 
-### Prerequisites
+## 🎯 Flashing
 
-Before starting, ensure you have the necessary tools installed on your uConsole:
+> [!WARNING]
+> Keep another input method (external keyboard or SSH) at hand: if flashing
+> fails, the uConsole keyboard won't work until it is reflashed. The rest of
+> the unit is unaffected.
 
-1. **Install DFU utilities:**
-   ```sh
-   sudo apt install -y dfu-util
-   ```
+The keyboard uses the stm32duino bootloader (`1eaf:0003`). After every reset it
+waits 2-3 seconds for an upload, then starts the installed firmware.
 
-On musl libc Linux systems, you have to install gcompat first for the upload script to work. On Alpine or postmarketOS, this can be done via `sudo apk add gcompat`.
+**Prepare.** Install `dfu-util` (`sudo apt install -y dfu-util`) and get
+`clockworkpi_uconsole_default.bin` from
+[Releases](https://github.com/j1n6/qmk-uconsole/releases) or
+build it (see *Building in a Container* below).
 
-2. **Download the original stock firmware package:**
-   ```sh
-   wget https://github.com/clockworkpi/uConsole/raw/master/Bin/uconsole_keyboard_flash.tar.gz
-   tar zxvf uconsole_keyboard_flash.tar.gz
-   cd uconsole_keyboard_flash
-   ```
+### Update existing QMK firmware
 
-3. **Download the latest QMK firmware:**
-   - Go to [Releases](https://github.com/j1n6/qmk-uconsole/releases)
-   - Download the firmware binary file of your choice:
-     - **`clockworkpi_uconsole_default.bin`**: Standard full-featured firmware (includes the tap-hold toggle feature).
-     - **`clockworkpi_uconsole_no_tap_hold.bin`**: Simplified firmware with the tap-hold feature completely disabled/compiled out.
-   - Move the downloaded `.bin` file to the `uconsole_keyboard_flash` folder. *(Note: If you download the `no_tap_hold` build, replace `clockworkpi_uconsole_default.bin` with `clockworkpi_uconsole_no_tap_hold.bin` in the flashing commands below.)*
+```sh
+sudo dfu-util -w -d 1eaf:0003 -a 2 -D clockworkpi_uconsole_default.bin -R
+```
 
----
+When it prints `waiting for device`, press **Fn+Fn** (hold one Fn, press the
+other) to reboot the keyboard into the bootloader. `make reflash` runs the
+same command. Any key assigned `QK_BOOT` in VIA works the same way.
 
-### Option 1: First-Time Flash from Stock Firmware
+### First flash from the stock ClockworkPi firmware
 
-If you're upgrading from the original ClockworkPi firmware:
+```sh
+wget https://github.com/clockworkpi/uConsole/raw/master/Bin/uconsole_keyboard_flash.tar.gz
+tar zxvf uconsole_keyboard_flash.tar.gz && cd uconsole_keyboard_flash
+# in maple_upload change every delay from 750 to 1500 ms (avoids "serial port not ready")
+sudo ./maple_upload ttyACM0 2 1EAF:0003 /path/to/clockworkpi_uconsole_default.bin
+```
 
-1. **Edit the upload script for better reliability:**
-   
-   Open `maple_upload` and change all delay values from `750` to `1500` milliseconds. This prevents "serial port not ready" errors.
+On musl systems (Alpine, postmarketOS) install `gcompat` first.
 
-2. **Flash the firmware:**
-   ```sh
-   sudo ./maple_upload ttyACM0 2 1EAF:0003 clockworkpi_uconsole_default.bin
-   ```
----
+### 🆘 Recovery
 
-### Option 2: Upgrade from Existing QMK Firmware
+If the keyboard doesn't respond after flashing, first reboot the OS and retry.
+If that doesn't help, force the bootloader in hardware:
 
-If you already have QMK installed and want to update:
+1. Connect the keyboard to the uConsole with a micro-USB cable.
+2. Short the **S1** pads on the keyboard PCB; the green LED flashes.
+3. In `uconsole_keyboard_flash` run `sudo ./flash` to restore the stock
+   firmware (it may take several attempts), then flash QMK again.
 
-1. **Run the DFU utility:**
-   ```sh
-   sudo dfu-util -w -d 1eaf:0003 -a 2 -D clockworkpi_uconsole_default.bin -R
-   ```
-
-2. **Enter bootloader mode:**
-   
-When dfu-util says `waiting for device, exit with ctrl-C`, press **Left Fn** and **Right Fn**.
-
-After installing the QMK firmware, the bootloader has a 2-3 second window for
-uploading firmware. Otherwise it will verify the existing firmware and continue
-to function normally.
-
----
-
-### 🆘 Recovery: Unbricking Your Keyboard
-
-In some rare cases, the keyboard will have entered the DFU mode, but the
-firmware won't have flashed and the keyboard won't respond to input. If this
-happens, try rebooting the operating system and repeating the flashing steps.
-
-If the keyboard remains non-functional, don't panic! Follow these steps:
-
-1. **Connect the micro-USB cable** from your uConsole to the keyboard
-
-2. **Enter bootloader mode:**
-   - Locate the **S1 pin** on the keyboard PCB
-   - Short the S1 pin (you'll see a green LED flash)
 ![Bootloading illustration](https://github.com/j1n6/qmk-uconsole/blob/main/images/uconsole%20keyboard%20bootloading.jpeg?raw=true)
-
-3. **Flash the stock firmware:**
-   ```sh
-   cd uconsole_keyboard_flash
-   sudo ./flash
-   ```
-   
-   **Note:** You may need to try this several or many times.
-
-4. **Verify:** Once successful, your keyboard should be responsive again. You can then re-flash QMK if needed.
 
 ## 🛠️ Building in a Container (podman compose)
 
@@ -180,10 +141,10 @@ If the keyboard remains non-functional, don't panic! Follow these steps:
 
 * **`build`** — compiles the firmware with the QMK toolchain (fetches the `qmk_firmware` submodule on first run):
   ```sh
-  podman compose run --rm build              # default + no_tap_hold
+  podman compose run --rm build              # default keymap
   podman compose run --rm build default      # a single keymap
   ```
-  Produces `clockworkpi_uconsole_default.bin` and `clockworkpi_uconsole_no_tap_hold.bin` in the repository root.
+  Produces `clockworkpi_uconsole_default.bin` in the repository root.
 
 * **`claude`** — an interactive [Claude Code](https://code.claude.com) session with the same toolchain, so the agent can build the firmware itself:
   ```sh

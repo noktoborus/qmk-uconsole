@@ -56,15 +56,18 @@ void backlight_init_ports(void) {
     pwmStart(&PWMD1, &pwmCFG);
 }
 
+// Duty cycle (out of the 2000-tick period) for each backlight level;
+// growing by about sqrt(2) per step so the levels look evenly spaced.
+static const uint16_t backlight_duty[BACKLIGHT_LEVELS + 1] = {0, 88, 125, 177, 250, 354, 500, 707, 1000, 1414, 2000};
+
 void backlight_set(uint8_t level) {
+    if (level > BACKLIGHT_LEVELS) {
+        level = BACKLIGHT_LEVELS;
+    }
     if (level == 0) {
         pwmDisableChannel(&PWMD1, 0);
-    } else if (level == 1) {
-        // Step 1: 500/2000 = 25% duty cycle
-        pwmEnableChannel(&PWMD1, 0, 500); 
     } else {
-        // Step 2: 2000/2000 = 100% duty cycle
-        pwmEnableChannel(&PWMD1, 0, 2000);
+        pwmEnableChannel(&PWMD1, 0, backlight_duty[level]);
     }
 }
 

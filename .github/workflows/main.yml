@@ -35,21 +35,12 @@ jobs:
     
     - name: Build firmware hex distribution (default)
       run: cd qmk_firmware && qmk compile -kb clockworkpi/uconsole -km default
-
-    - name: Build firmware hex distribution (no tap-hold)
-      run: cd qmk_firmware && qmk compile -kb clockworkpi/uconsole -km no_tap_hold
       
     - name: Upload default artifact
       uses: actions/upload-artifact@master
       with:
         name: clockworkpi_uconsole_default.bin  
         path: qmk_firmware/.build/clockworkpi_uconsole_default.bin
-
-    - name: Upload no tap-hold artifact
-      uses: actions/upload-artifact@master
-      with:
-        name: clockworkpi_uconsole_no_tap_hold.bin  
-        path: qmk_firmware/.build/clockworkpi_uconsole_no_tap_hold.bin
     
     # - name: Release
     #   uses: docker://softprops/action-gh-release
@@ -57,5 +48,4 @@ jobs:
     #   with:
     #     files: |
     #       qmk_firmware/.build/clockworkpi_uconsole_default.bin
-    #       qmk_firmware/.build/clockworkpi_uconsole_no_tap_hold.bin
     #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

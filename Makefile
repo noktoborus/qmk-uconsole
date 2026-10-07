@@ -10,7 +10,7 @@ default:
 
 # Build with a QMK toolchain installed on the host
 .PHONY: local
-local: clockworkpi_uconsole_default.bin clockworkpi_uconsole_no_tap_hold.bin
+local: clockworkpi_uconsole_default.bin
 
 .PHONY: reflash
 reflash: default
@@ -20,14 +20,9 @@ reflash: default
 clockworkpi_uconsole_default.bin: qmk_firmware/.build/clockworkpi_uconsole_default.bin
 	mv qmk_firmware/.build/clockworkpi_uconsole_default.bin $@
 
-clockworkpi_uconsole_no_tap_hold.bin: qmk_firmware/.build/clockworkpi_uconsole_no_tap_hold.bin
-	mv qmk_firmware/.build/clockworkpi_uconsole_no_tap_hold.bin $@
-
 qmk_firmware/.build/clockworkpi_uconsole_default.bin: clockworkpi/uconsole/keymaps/default/keymap.c qmk_firmware
 	sh -c 'cd qmk_firmware; qmk compile -kb clockworkpi/uconsole -km default'
 
-qmk_firmware/.build/clockworkpi_uconsole_no_tap_hold.bin: clockworkpi/uconsole/keymaps/no_tap_hold/keymap.c clockworkpi/uconsole/keymaps/default/keymap.c qmk_firmware
-	sh -c 'cd qmk_firmware; qmk compile -kb clockworkpi/uconsole -km no_tap_hold'
 
 qmk_firmware:
 	rm -rf $@.tmp
