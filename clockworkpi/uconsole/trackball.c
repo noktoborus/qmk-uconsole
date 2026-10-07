@@ -23,9 +23,7 @@ enum { MODE_WHEEL, MODE_MOUSE };
 
 static uint8_t last_mode = MODE_MOUSE;
 static uint16_t last_report = 0;
-volatile bool select_button_pressed = false; // toggled from keymap
-volatile bool select_button_scrolled =
-    false; // set when trackball moves while select is pressed
+volatile uint8_t scroll_keys_held = 0; // set from keymap
 volatile bool precision_mode = false; // toggled from keymap
 extern volatile bool is_locked;
 
@@ -60,6 +58,7 @@ static const trackball_config_t trackball_config_defaults = {
     .glide = 100,
     .scroll_speed = 100,
     .scroll_reverse = 0,
+    .scroll_layers = 1 << 1, // Fn layer
 };
 trackball_config_t trackball_config;
 
@@ -82,6 +81,7 @@ static void trackball_config_apply(void) {
   glide_decay = (c->glide > 30) ? 1.0f - 30.0f / c->glide : 0.0f;
   c->scroll_speed = clamp_u8(c->scroll_speed, 25, 250);
   c->scroll_reverse = c->scroll_reverse ? 1 : 0;
+  c->scroll_layers &= 0x0F; // DYNAMIC_KEYMAP_LAYER_COUNT layers
   wheel_denom = MAX(1, WHEEL_DENOM_DEFAULT * 100 / c->scroll_speed);
 }
 
@@ -249,10 +249,6 @@ static void trackball_move(uint8_t axis, int8_t direction, uint16_t now) {
         (uint32_t)gliders[axis].release * trackball_config.glide / 100,
         UINT16_MAX);
   }
-
-  if (select_button_pressed) {
-    select_button_scrolled = true;
-  }
 }
 
 // Called from the GPIO interrupts: only record the step.
@@ -337,7 +333,11 @@ report_mouse_t pointing_device_driver_get_report(report_mouse_t mouse_report) {
   const uint16_t delta = TIMER_DIFF_16(now, last_report);
   last_report = now;
 
-  const uint8_t mode = select_button_pressed ? MODE_WHEEL : MODE_MOUSE;
+  // Scroll while a scroll key is held or a scroll layer is on top
+  const uint8_t layer = get_highest_layer(layer_state | default_layer_state);
+  const bool scroll = scroll_keys_held ||
+                      (layer < 8 && (trackball_config.scroll_layers >> layer) & 1);
+  const uint8_t mode = scroll ? MODE_WHEEL : MODE_MOUSE;
   if (last_mode != mode) {
     rate_meter_expire(&rate_meters[AXIS_X]);
     rate_meter_expire(&rate_meters[AXIS_Y]);
@@ -432,6 +432,7 @@ enum {
   id_tb_glide,
   id_tb_scroll_speed,
   id_tb_scroll_reverse,
+  id_tb_layer0_mode, // .. id_tb_layer0_mode + 3: 0 = cursor, 1 = scroll
 };
 
 static uint8_t *trackball_config_value(uint8_t value_id) {
@@ -454,6 +455,24 @@ static uint8_t *trackball_config_value(uint8_t value_id) {
 }
 
 bool trackball_via_command(uint8_t command_id, uint8_t value_id, uint8_t *value) {
+  // Per-layer ball mode: one bit of scroll_layers each
+  if (value_id >= id_tb_layer0_mode && value_id < id_tb_layer0_mode + 4) {
+    const uint8_t bit = 1 << (value_id - id_tb_layer0_mode);
+    switch (command_id) {
+    case id_custom_set_value:
+      trackball_config.scroll_layers =
+          *value ? (trackball_config.scroll_layers | bit) : (trackball_config.scroll_layers & ~bit);
+      break;
+    case id_custom_get_value:
+      *value = (trackball_config.scroll_layers & bit) ? 1 : 0;
+      break;
+    case id_custom_save:
+      trackball_config_save();
+      break;
+    }
+    return true;
+  }
+
   uint8_t *field = trackball_config_value(value_id);
   if (field == NULL)
     return false;

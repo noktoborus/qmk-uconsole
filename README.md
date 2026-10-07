@@ -41,14 +41,15 @@ Gamepad function is mapped to the following table:
 | B      | `JS_B` (button 1) | Browser Back    (`KC_WWW_BACK`)
 | X      | `JS_X` (button 2) | System Request (`KC_SYSTEM_REQUEST`)
 | Y      | `JS_Y` (button 3) | Menu    (`KC_MENU`)
-| Select | `JS_SEL` (button 4) | Select  (`KC_SELECT`)
+| Select | `JS_SEL` (button 4) | Select + trackball scroll (`SEL_SCRL`)
 | Start  | `JS_STA` (button 5) | Super   (`KC_LEFT_GUI`)
 | L      | `JS_L` (button 6) | Left mouse button  (`MS_BTN1`)
 | R      | `JS_R` (button 7) | Right mouse button (`MS_BTN2`)
 
 * **Gamepad mode:** Press **Fn+G** to turn it on, and **Fn+G** again to turn it off
 
-* **Trackball Scrolling:** Hold the **Select** key and move the trackball to scroll.
+* **Trackball Scrolling:** Hold the **Select** key and move the trackball to scroll
+  (the key is `SEL_SCRL`: it sends Select and makes the ball scroll while held).
     * Move Up/Down for Vertical Scroll
     * Move Left/Right for Horizontal Scroll
 
@@ -65,7 +66,7 @@ Advanced trackball features:
 
 | Action | Function | Description |
 |---|---|---|
-| **Hold `Select` + Move Trackball** | Trackball Scrolling | Move Up/Down for vertical, Left/Right for horizontal scroll |
+| **Hold `Select` or `Fn` + Move Trackball** | Trackball Scrolling | Move Up/Down for vertical, Left/Right for horizontal scroll |
 | **`Fn` + Click Trackball** | Precision Cursor Mode | Toggles between normal and precision (reduced) cursor speeds (`TB_PREC` keycode, can be reassigned in VIA) |
 
 ### System & Feature Toggles
@@ -101,13 +102,15 @@ the defaults described above, layer 3 is empty and free to configure. The
 keyboard is not in the VIA repository, so load its definition manually: in
 VIA open **Settings**, enable **Show Design tab**, then in **Design** load
 [`clockworkpi/uconsole/via.json`](clockworkpi/uconsole/via.json). The
-joystick axes, gamepad buttons, lock and precision mode keycodes are
-available under **Custom**.
+joystick axes, gamepad buttons, lock, precision mode, scroll (trackball
+scrolls while held) and select + scroll keycodes are available under **Custom**.
 
 Trackball settings live in the **Trackball** tab of VIA: cursor speed,
 acceleration, precision mode speed, glide strength (how long the cursor keeps
 coasting after the ball stops, 0 = off), scroll speed
-and direction. Changes apply immediately and are saved to EEPROM.
+and direction, and for each layer whether the ball moves the cursor or scrolls
+(by default it scrolls while `Fn` holds layer 1). Changes apply immediately and
+are saved to EEPROM.
 
 Keymaps and macros edited in VIA are stored in EEPROM. Flashing a firmware
 built on a different date resets them to the defaults compiled into it.

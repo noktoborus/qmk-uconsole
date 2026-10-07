@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include QMK_KEYBOARD_H
+#include "trackball.h"
 
 enum {
   LY0 = 0,
@@ -26,7 +27,9 @@ enum {
   JS_SEL,
   JS_STA,
   JS_L,     // Gamepad shoulder buttons (QMK JS_6, JS_7)
-  JS_R
+  JS_R,
+  TB_SCRL,  // Trackball scrolls while held
+  SEL_SCRL  // Select key; the trackball also scrolls while it is held
 };
 
 const key_override_t vol_key_override =
@@ -63,7 +66,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
         /* JS_4 Select -> (Keyboard) Select
          * JS_5 Start  -> Left GUI */
-        KC_SELECT, KC_LGUI, KC_VOLD, KC_GRV,  KC_LBRC, KC_RBRC, KC_MINS, KC_EQL,
+        SEL_SCRL,  KC_LGUI, KC_VOLD, KC_GRV,  KC_LBRC, KC_RBRC, KC_MINS, KC_EQL,
         KC_1,      KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,
         KC_9,      KC_0,    KC_ESC,  KC_TAB,  KC_NO,   KC_NO,   KC_NO,   KC_NO,
         KC_Q,      KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,
@@ -152,7 +155,6 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 volatile bool is_locked = false;
 
 // Extern from trackball.c to control scroll mode
-extern volatile bool select_button_pressed;
 extern volatile bool precision_mode;
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
@@ -176,11 +178,24 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     }
     return false;
   }
-    case MO(LY1):
-    case KC_SELECT:
-      // Select key enables scroll mode while held (preserve tap behavior)
-      select_button_pressed = record->event.pressed;
-      return true;
+    case TB_SCRL:
+    case SEL_SCRL: {
+      const uint8_t bit = (keycode == TB_SCRL) ? SCROLL_KEY_TB_SCRL : SCROLL_KEY_SEL_SCRL;
+      if (record->event.pressed) {
+        scroll_keys_held |= bit;
+      } else {
+        scroll_keys_held &= ~bit;
+      }
+      // SEL_SCRL also sends the Select key
+      if (keycode == SEL_SCRL) {
+        if (record->event.pressed) {
+          register_code(KC_SELECT);
+        } else {
+          unregister_code(KC_SELECT);
+        }
+      }
+      return false;
+    }
     case JS_LEFT:
       joystick_set_axis(1, record->event.pressed ? -127 : 0);
       return false;

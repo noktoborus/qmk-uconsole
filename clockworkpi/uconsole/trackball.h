@@ -41,6 +41,11 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record);
  */
 extern volatile bool precision_mode;
 
+/* Held scroll keys (TB_SCRL, SEL_SCRL), one bit each: the ball scrolls
+ * instead of moving the cursor while any is held. */
+enum { SCROLL_KEY_TB_SCRL = 1 << 0, SCROLL_KEY_SEL_SCRL = 1 << 1 };
+extern volatile uint8_t scroll_keys_held;
+
 /* Trackball settings, stored in the keyboard EEPROM datablock and editable
  * from VIA (see the "Trackball" menu in via.json). Percent values scale the
  * built-in defaults, so 100 keeps the stock behaviour.
@@ -52,7 +57,8 @@ typedef struct {
   uint8_t glide;        // coasting after the ball stops, % (0-250, 0 = off)
   uint8_t scroll_speed; // scroll speed, % (25-250)
   uint8_t scroll_reverse; // reverse scroll direction (0/1)
-  uint8_t reserved[2];
+  uint8_t scroll_layers; // bit N set: the ball scrolls while layer N is the highest active
+  uint8_t reserved[1];
 } trackball_config_t;
 
 // Stored at the start of the keyboard EEPROM datablock

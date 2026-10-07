@@ -21,7 +21,7 @@
 #define EECONFIG_KB_DATA_SIZE 16
 // Bump when the EEPROM layout or the default keymap changes: a mismatch
 // resets the whole EEPROM, so VIA reloads the keymap compiled into the firmware
-#define EECONFIG_KB_DATA_VERSION 0x55430009
+#define EECONFIG_KB_DATA_VERSION 0x55430007
 
 // Halve QMK keyboard mousekey speed (default MOVE_DELTA is 8)
 #define MOUSEKEY_MOVE_DELTA 8

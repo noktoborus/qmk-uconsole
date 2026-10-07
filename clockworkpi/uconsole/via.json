@@ -196,6 +196,63 @@
               ]
             }
           ]
+        },
+        {
+          "label": "Layers",
+          "content": [
+            {
+              "label": "Layer 0 (base)",
+              "type": "dropdown",
+              "options": [
+                "Cursor",
+                "Scroll"
+              ],
+              "content": [
+                "id_tb_layer0_mode",
+                0,
+                7
+              ]
+            },
+            {
+              "label": "Layer 1 (Fn)",
+              "type": "dropdown",
+              "options": [
+                "Cursor",
+                "Scroll"
+              ],
+              "content": [
+                "id_tb_layer1_mode",
+                0,
+                8
+              ]
+            },
+            {
+              "label": "Layer 2 (gamepad)",
+              "type": "dropdown",
+              "options": [
+                "Cursor",
+                "Scroll"
+              ],
+              "content": [
+                "id_tb_layer2_mode",
+                0,
+                9
+              ]
+            },
+            {
+              "label": "Layer 3",
+              "type": "dropdown",
+              "options": [
+                "Cursor",
+                "Scroll"
+              ],
+              "content": [
+                "id_tb_layer3_mode",
+                0,
+                10
+              ]
+            }
+          ]
         }
       ]
     }
@@ -270,6 +327,16 @@
       "name": "JS_R",
       "title": "Gamepad R (button 7)",
       "shortName": "JS R"
+    },
+    {
+      "name": "TB_SCRL",
+      "title": "Trackball scrolls while held",
+      "shortName": "Scroll"
+    },
+    {
+      "name": "SEL_SCRL",
+      "title": "Select key; trackball scrolls while held",
+      "shortName": "Sel+Scroll"
     }
   ],
   "layouts": {
