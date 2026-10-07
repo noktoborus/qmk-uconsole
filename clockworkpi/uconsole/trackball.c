@@ -1,6 +1,8 @@
+#include QMK_KEYBOARD_H
 #include "trackball.h"
 #include "backlight_fx.h"
 #include "glider.h"
+#include "lock.h"
 #include "pointing_device.h"
 #include "quantum.h"
 #include "rate_meter.h"
@@ -25,7 +27,6 @@ static uint8_t last_mode = MODE_MOUSE;
 static uint16_t last_report = 0;
 volatile uint8_t scroll_keys_held = 0; // set from keymap
 volatile bool precision_mode = false; // toggled from keymap
-extern volatile bool is_locked;
 
 static int8_t distances[AXIS_NUM] = {0};
 
@@ -487,9 +488,32 @@ bool trackball_via_command(uint8_t command_id, uint8_t value_id, uint8_t *value)
 }
 #endif // VIA_ENABLE
 
-bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
-  if (record->event.pressed) {
-    backlight_fx_activity(true);
+bool process_record_trackball(uint16_t keycode, keyrecord_t *record) {
+  switch (keycode) {
+  case TB_PREC:
+    if (record->event.pressed) {
+      precision_mode = !precision_mode;
+    }
+    return false;
+  case TB_SCRL:
+  case SEL_SCRL: {
+    const uint8_t bit = (keycode == TB_SCRL) ? SCROLL_KEY_TB_SCRL : SCROLL_KEY_SEL_SCRL;
+    if (record->event.pressed) {
+      scroll_keys_held |= bit;
+    } else {
+      scroll_keys_held &= ~bit;
+    }
+    // SEL_SCRL also sends the Select key
+    if (keycode == SEL_SCRL) {
+      if (record->event.pressed) {
+        register_code(KC_SELECT);
+      } else {
+        unregister_code(KC_SELECT);
+      }
+    }
+    return false;
   }
-  return process_record_user(keycode, record);
+  default:
+    return true;
+  }
 }

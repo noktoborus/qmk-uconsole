@@ -20,7 +20,7 @@ reflash: default
 clockworkpi_uconsole_default.bin: qmk_firmware/.build/clockworkpi_uconsole_default.bin
 	mv qmk_firmware/.build/clockworkpi_uconsole_default.bin $@
 
-qmk_firmware/.build/clockworkpi_uconsole_default.bin: clockworkpi/uconsole/keymaps/default/keymap.c qmk_firmware
+qmk_firmware/.build/clockworkpi_uconsole_default.bin: clockworkpi/uconsole/keymaps/default/keymap.json qmk_firmware
 	sh -c 'cd qmk_firmware; qmk compile -kb clockworkpi/uconsole -km default'
 
 

@@ -1,6 +1,8 @@
 #include "quantum.h"
 #include "trackball.h"
 #include "backlight_fx.h"
+#include "gamepad.h"
+#include "lock.h"
 #ifdef VIA_ENABLE
 #    include "via.h"
 #endif
@@ -42,6 +44,36 @@ void keyboard_post_init_kb(void) {
         backlight_fx_config_load();
     }
     keyboard_post_init_user();
+}
+
+// Shift + volume down sends volume up
+static bool process_record_volume(uint16_t keycode, keyrecord_t *record) {
+    static bool volume_up_held = false;
+    if (keycode != KC_VOLD) {
+        return true;
+    }
+    if (record->event.pressed && (get_mods() & MOD_MASK_SHIFT)) {
+        register_code(KC_VOLU);
+        volume_up_held = true;
+        return false;
+    }
+    if (!record->event.pressed && volume_up_held) {
+        unregister_code(KC_VOLU);
+        volume_up_held = false;
+        return false;
+    }
+    return true;
+}
+
+bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
+    if (record->event.pressed) {
+        backlight_fx_activity(true);
+    }
+    return process_record_lock(keycode, record) &&
+           process_record_trackball(keycode, record) &&
+           process_record_gamepad(keycode, record) &&
+           process_record_volume(keycode, record) &&
+           process_record_user(keycode, record);
 }
 
 // VIA offers layer keys for layers 0-9 (MO/TG/TO/DF/...), but only the first

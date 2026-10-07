@@ -30,11 +30,8 @@ uint16_t pointing_device_driver_get_cpi(void);
  */
 void pointing_device_driver_set_cpi(uint16_t cpi);
 
-/**
- * @brief Standard QMK record processing.
- * Detects the JS_4 keypress to toggle between cursor movement and scroll wheel modes.
- */
-bool process_record_kb(uint16_t keycode, keyrecord_t *record);
+/* Trackball keycodes: TB_PREC, TB_SCRL, SEL_SCRL; false if consumed. */
+bool process_record_trackball(uint16_t keycode, keyrecord_t *record);
 
 /* Precision mode toggle: when true, cursor movement is reduced for fine control.
  * Toggled by the TB_PREC keycode (Fn + trackball click by default).
