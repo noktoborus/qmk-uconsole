@@ -37,7 +37,29 @@ void pointing_device_driver_set_cpi(uint16_t cpi);
 bool process_record_kb(uint16_t keycode, keyrecord_t *record);
 
 /* Precision mode toggle: when true, cursor movement is reduced for fine control.
- * Toggled by holding Select and clicking the trackball middle button.
+ * Toggled by the TB_PREC keycode (Fn + trackball click by default).
  */
 extern volatile bool precision_mode;
+
+/* Trackball settings, stored in the keyboard EEPROM datablock and editable
+ * from VIA (see the "Trackball" menu in via.json). Percent values scale the
+ * built-in defaults, so 100 keeps the stock behaviour.
+ */
+typedef struct {
+  uint8_t speed;        // cursor speed, % (25-200)
+  uint8_t acceleration; // acceleration strength, % (0-200)
+  uint8_t precision;    // cursor speed in precision mode, % (10-100)
+  uint8_t glide;        // coasting after the ball stops, % (0-250, 0 = off)
+  uint8_t scroll_speed; // scroll speed, % (25-250)
+  uint8_t scroll_reverse; // reverse scroll direction (0/1)
+  uint8_t reserved[2];
+} trackball_config_t;
+
+_Static_assert(sizeof(trackball_config_t) == EECONFIG_KB_DATA_SIZE,
+               "EECONFIG_KB_DATA_SIZE must match trackball_config_t");
+
+extern trackball_config_t trackball_config;
+
+/* Loads the settings from EEPROM, falling back to defaults if invalid. */
+void trackball_config_load(void);
 #endif /* TRACKBALL_H */

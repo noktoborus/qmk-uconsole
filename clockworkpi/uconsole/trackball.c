@@ -3,7 +3,11 @@
 #include "pointing_device.h"
 #include "quantum.h"
 #include "rate_meter.h"
+#include "eeconfig.h"
 #include <math.h>
+#ifdef VIA_ENABLE
+#  include "via.h"
+#endif
 
 #define TB_LEFT PAL_LINE(GPIOC, 11U)
 #define TB_RIGHT PAL_LINE(GPIOC, 9U)
@@ -28,9 +32,65 @@ static int8_t distances[AXIS_NUM] = {0};
 static rate_meter_t rate_meters[AXIS_NUM] = {0};
 static glider_t gliders[AXIS_NUM] = {0};
 
-static const int16_t WHEEL_DENOM =
-    24; // Finer grain control for "High Res" feel
+// Glider units per wheel click at 100% scroll speed.
+// Finer grain control for "High Res" feel
+#define WHEEL_DENOM_DEFAULT 24
+static int16_t wheel_denom = WHEEL_DENOM_DEFAULT;
 static int16_t wheel_buffer[AXIS_NUM] = {0};
+
+static const trackball_config_t trackball_config_defaults = {
+    .speed = 100,
+    .acceleration = 100,
+    .precision = 50,
+    .glide = 100,
+    .scroll_speed = 100,
+    .scroll_reverse = 0,
+};
+trackball_config_t trackball_config;
+
+static float glide_decay = 0.7f;
+
+static uint8_t clamp_u8(uint8_t value, uint8_t min, uint8_t max) {
+  return value < min ? min : (value > max ? max : value);
+}
+
+// Clamp values coming from EEPROM or VIA and derive cached parameters.
+static void trackball_config_apply(void) {
+  trackball_config_t *c = &trackball_config;
+  c->speed = clamp_u8(c->speed, 25, 200);
+  c->acceleration = clamp_u8(c->acceleration, 0, 200);
+  c->precision = clamp_u8(c->precision, 10, 100);
+  c->glide = clamp_u8(c->glide, 0, 250);
+  // Glide strength scales how long the cursor coasts once the ball stops:
+  // the release time, the per-report speed decay while sensor steps are
+  // overdue (0.7 at 100%) and the overdue time before a full stop.
+  glide_decay = (c->glide > 30) ? 1.0f - 30.0f / c->glide : 0.0f;
+  c->scroll_speed = clamp_u8(c->scroll_speed, 25, 250);
+  c->scroll_reverse = c->scroll_reverse ? 1 : 0;
+  wheel_denom = MAX(1, WHEEL_DENOM_DEFAULT * 100 / c->scroll_speed);
+}
+
+static void trackball_config_save(void) {
+  eeconfig_update_kb_datablock(&trackball_config, 0, sizeof(trackball_config));
+}
+
+void eeconfig_init_kb_datablock(void) {
+  trackball_config = trackball_config_defaults;
+  trackball_config_apply();
+  trackball_config_save();
+}
+
+void trackball_config_load(void) {
+  if (!eeconfig_is_kb_datablock_valid()) {
+    // EEPROM written by an older firmware (different layout or keymap):
+    // reset everything, including the VIA keymap. This also writes the
+    // trackball defaults through eeconfig_init_kb_datablock().
+    eeconfig_init();
+    return;
+  }
+  eeconfig_read_kb_datablock(&trackball_config, 0, sizeof(trackball_config));
+  trackball_config_apply();
+}
 
 // Anti-rebound / Consistency Filter
 // Low threshold to catch rebounds even on short movements
@@ -144,13 +204,14 @@ static void trackball_move(uint8_t axis, int8_t direction) {
         (dominant_rate > 0) ? (fminf(rx, ry) / dominant_rate) : 0;
     // Compensate for velocity being split across two axes.
     // Boost diagonal acceleration and reduce cardinal acceleration.
-    const float acceleration_scale = 1.0f + 1.2f * diagonal_balance;
-    float velocity =
-        rateToVelocityCurve(rate / 4.0f, acceleration_scale) * 0.65f;
+    const float acceleration_scale = (1.0f + 1.2f * diagonal_balance) *
+                                     trackball_config.acceleration / 100.0f;
+    float velocity = rateToVelocityCurve(rate / 4.0f, acceleration_scale) *
+                     0.65f * trackball_config.speed / 100.0f;
 
     // Apply precision scaling if enabled
     if (precision_mode) {
-      velocity *= 0.5f; // 50% speed for high precision
+      velocity *= trackball_config.precision / 100.0f;
     }
 
     const float ratio = (rate > 0) ? (velocity / rate) : 0;
@@ -177,6 +238,10 @@ static void trackball_move(uint8_t axis, int8_t direction) {
       glider_update_speed(&gliders[AXIS_X], vx);
       glider_update(&gliders[AXIS_Y], vy, sustain_y);
     }
+    // Scale the coast time by the glide strength (0 = stop with the ball)
+    gliders[axis].release = MIN(
+        (uint32_t)gliders[axis].release * trackball_config.glide / 100,
+        UINT16_MAX);
   }
 
   if (select_button_pressed) {
@@ -262,8 +327,9 @@ report_mouse_t pointing_device_driver_get_report(report_mouse_t mouse_report) {
         uint16_t buffer = (limit < 20) ? 5 : (limit / 4);
         if (time_since_any > limit + buffer) {
           gliders[i].sustain = 0;
-          gliders[i].speed *= 0.7f;
-          if (time_since_any > (limit + buffer) * 3 / 2) {
+          gliders[i].speed *= glide_decay;
+          if (time_since_any >
+              (uint32_t)(limit + buffer) * (200 + trackball_config.glide) / 200) {
             glider_stop(&gliders[i]);
           }
         }
@@ -287,12 +353,12 @@ report_mouse_t pointing_device_driver_get_report(report_mouse_t mouse_report) {
     wheel_buffer[AXIS_Y] += glider_glide(&gliders[AXIS_Y], (uint8_t)delta);
 
     // Calculate scroll amount from accumulated buffer
-    h = wheel_buffer[AXIS_X] / WHEEL_DENOM;
-    v = wheel_buffer[AXIS_Y] / WHEEL_DENOM;
+    h = wheel_buffer[AXIS_X] / wheel_denom;
+    v = wheel_buffer[AXIS_Y] / wheel_denom;
 
     // Keep remainder in buffer for next report
-    wheel_buffer[AXIS_X] -= h * WHEEL_DENOM;
-    wheel_buffer[AXIS_Y] -= v * WHEEL_DENOM;
+    wheel_buffer[AXIS_X] -= h * wheel_denom;
+    wheel_buffer[AXIS_Y] -= v * wheel_denom;
 
     // Clear raw distances (consumed by glider logic in
     // trackball_move/glider_glide updates)
@@ -305,12 +371,73 @@ report_mouse_t pointing_device_driver_get_report(report_mouse_t mouse_report) {
   mouse_report.x = x;
   mouse_report.y = y;
   mouse_report.h = h;
-  mouse_report.v = -v; // Inverted for natural scroll direction
+  // Inverted by default for natural scroll direction
+  mouse_report.v = trackball_config.scroll_reverse ? v : -v;
   return mouse_report;
 }
 
 uint16_t pointing_device_driver_get_cpi(void) { return 0; }
 void pointing_device_driver_set_cpi(uint16_t cpi) { (void)cpi; }
+
+#ifdef VIA_ENABLE
+// VIA "Trackball" menu (via.json): value ids on the custom channel
+enum {
+  id_tb_speed = 1,
+  id_tb_acceleration,
+  id_tb_precision,
+  id_tb_glide,
+  id_tb_scroll_speed,
+  id_tb_scroll_reverse,
+};
+
+static uint8_t *trackball_config_value(uint8_t value_id) {
+  switch (value_id) {
+  case id_tb_speed:
+    return &trackball_config.speed;
+  case id_tb_acceleration:
+    return &trackball_config.acceleration;
+  case id_tb_precision:
+    return &trackball_config.precision;
+  case id_tb_glide:
+    return &trackball_config.glide;
+  case id_tb_scroll_speed:
+    return &trackball_config.scroll_speed;
+  case id_tb_scroll_reverse:
+    return &trackball_config.scroll_reverse;
+  default:
+    return NULL;
+  }
+}
+
+void via_custom_value_command_kb(uint8_t *data, uint8_t length) {
+  // data = [ command_id, channel_id, value_id, value_data ]
+  uint8_t *command_id = &data[0];
+  uint8_t *value = (data[1] == id_custom_channel)
+                       ? trackball_config_value(data[2])
+                       : NULL;
+
+  if (value == NULL) {
+    *command_id = id_unhandled;
+    return;
+  }
+
+  switch (*command_id) {
+  case id_custom_set_value:
+    *value = data[3];
+    trackball_config_apply();
+    break;
+  case id_custom_get_value:
+    data[3] = *value;
+    break;
+  case id_custom_save:
+    trackball_config_save();
+    break;
+  default:
+    *command_id = id_unhandled;
+    break;
+  }
+}
+#endif // VIA_ENABLE
 
 bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
   return process_record_user(keycode, record);

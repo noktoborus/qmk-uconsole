@@ -10,7 +10,96 @@
     "qmk_lighting"
   ],
   "menus": [
-    "qmk_backlight"
+    "qmk_backlight",
+    {
+      "label": "Trackball",
+      "content": [
+        {
+          "label": "Cursor",
+          "content": [
+            {
+              "label": "Speed (%)",
+              "type": "range",
+              "options": [
+                25,
+                200
+              ],
+              "content": [
+                "id_tb_speed",
+                0,
+                1
+              ]
+            },
+            {
+              "label": "Acceleration (%)",
+              "type": "range",
+              "options": [
+                0,
+                200
+              ],
+              "content": [
+                "id_tb_acceleration",
+                0,
+                2
+              ]
+            },
+            {
+              "label": "Precision mode speed (%)",
+              "type": "range",
+              "options": [
+                10,
+                100
+              ],
+              "content": [
+                "id_tb_precision",
+                0,
+                3
+              ]
+            },
+            {
+              "label": "Glide strength (%)",
+              "type": "range",
+              "options": [
+                0,
+                250
+              ],
+              "content": [
+                "id_tb_glide",
+                0,
+                4
+              ]
+            }
+          ]
+        },
+        {
+          "label": "Scroll",
+          "content": [
+            {
+              "label": "Speed (%)",
+              "type": "range",
+              "options": [
+                25,
+                250
+              ],
+              "content": [
+                "id_tb_scroll_speed",
+                0,
+                5
+              ]
+            },
+            {
+              "label": "Reverse direction",
+              "type": "toggle",
+              "content": [
+                "id_tb_scroll_reverse",
+                0,
+                6
+              ]
+            }
+          ]
+        }
+      ]
+    }
   ],
   "customKeycodes": [
     {
@@ -37,6 +126,11 @@
       "name": "KB_LOCK",
       "title": "Lock keyboard (sleep/wake)",
       "shortName": "Lock"
+    },
+    {
+      "name": "TB_PREC",
+      "title": "Toggle trackball precision mode",
+      "shortName": "Prec"
     }
   ],
   "layouts": {

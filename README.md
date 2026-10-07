@@ -59,12 +59,12 @@ The physical directional keys change functions based on the active mode:
 | **Gamepad** (Layer 2) | None | Virtual joystick axes (X and Y axes) |
 
 ### Trackball & Cursor Settings
-Advanced trackball features are accessed by holding the **Select** key:
+Advanced trackball features:
 
 | Action | Function | Description |
 |---|---|---|
 | **Hold `Select` + Move Trackball** | Trackball Scrolling | Move Up/Down for vertical, Left/Right for horizontal scroll |
-| **Hold `Select` + Click Trackball** | Precision Cursor Mode | Toggles between normal and precision (reduced) cursor speeds |
+| **`Fn` + Click Trackball** | Precision Cursor Mode | Toggles between normal and precision (reduced) cursor speeds (`TB_PREC` keycode, can be reassigned in VIA) |
 
 ### System & Feature Toggles
 Use the following shortcuts to toggle hardware modes and special features:
@@ -82,7 +82,12 @@ the defaults described above, layer 3 is empty and free to configure. The
 keyboard is not in the VIA repository, so load its definition manually: in
 VIA open **Settings**, enable **Show Design tab**, then in **Design** load
 [`clockworkpi/uconsole/via.json`](clockworkpi/uconsole/via.json). The
-joystick and lock keycodes are available under **Custom**.
+joystick, lock and precision mode keycodes are available under **Custom**.
+
+Trackball settings live in the **Trackball** tab of VIA: cursor speed,
+acceleration, precision mode speed, glide strength (how long the cursor keeps
+coasting after the ball stops, 0 = off), scroll speed
+and direction. Changes apply immediately and are saved to EEPROM.
 
 Keymaps and macros edited in VIA are stored in EEPROM. Flashing a firmware
 built on a different date resets them to the defaults compiled into it.

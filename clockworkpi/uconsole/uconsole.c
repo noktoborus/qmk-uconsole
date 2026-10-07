@@ -1,4 +1,5 @@
 #include "quantum.h"
+#include "trackball.h"
 
 // Helper to safely clear the backup register
 void clear_bootloader_flag(void) {
@@ -18,6 +19,11 @@ void clear_bootloader_flag(void) {
 void keyboard_pre_init_kb(void) {
     clear_bootloader_flag();
     keyboard_pre_init_user();
+}
+
+void keyboard_post_init_kb(void) {
+    trackball_config_load();
+    keyboard_post_init_user();
 }
 
 void mcu_reset(void) {

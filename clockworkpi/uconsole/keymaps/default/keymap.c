@@ -16,7 +16,8 @@ enum {
   JS_RGHT,
   JS_UP,
   JS_DOWN,
-  KB_LOCK
+  KB_LOCK,
+  TB_PREC   // Toggle trackball precision mode
 };
 
 const key_override_t vol_key_override =
@@ -68,7 +69,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
      *
      *   (PgU)            ( L ) ( R )          (   ) (   )
      * (Hom) (End)                               (   ) (   )
-     *   (PgD)                                    (o - trackball.c)
+     *   (PgD)                                    (o - precision mode)
      *
      * (Lck)(Prt)(Pau)     (Mut)(   )(   )(   )(F11)(F12)(   )
      * (   )(F1 )(F2 )(F3 )(F4 )(F5 )(F6 )(F7 )(F8 )(F9 )(F10)(Del)
@@ -82,7 +83,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [LY1] = LAYOUT(
         KC_PGUP, KC_PGDN, KC_HOME, KC_END,  TG(LY2), TG(LY2), TG(LY2), TG(LY2),
         _______, _______, _______, _______, KC_LGUI, _______, KC_RGUI, _______,
-        _______, _______, _______, _______, _______, _______, _______, _______,
+        TB_PREC, _______, _______, _______, _______, _______, _______, _______,
 
         KC_PSCR, KC_PAUS, KC_MUTE, _______, _______, _______, KC_F11,  KC_F12,
         KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6,   KC_F7,   KC_F8,
@@ -182,12 +183,11 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     case JS_DOWN:
       joystick_set_axis(0, record->event.pressed ? 127 : 0);
       return false;
-    case MS_BTN3:
-      if (record->event.pressed && select_button_pressed) {
-          precision_mode = !precision_mode;
-          return false;
+    case TB_PREC:
+      if (record->event.pressed) {
+        precision_mode = !precision_mode;
       }
-      return true;
+      return false;
     default:
       return true;
   }
