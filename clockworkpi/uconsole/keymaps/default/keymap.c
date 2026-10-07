@@ -17,7 +17,16 @@ enum {
   JS_UP,
   JS_DOWN,
   KB_LOCK,
-  TB_PREC   // Toggle trackball precision mode
+  TB_PREC,  // Toggle trackball precision mode
+  // Gamepad buttons (QMK JS_0..JS_5), so VIA can show and assign them
+  JS_A,
+  JS_B,
+  JS_X,
+  JS_Y,
+  JS_SEL,
+  JS_STA,
+  JS_L,     // Gamepad shoulder buttons (QMK JS_6, JS_7)
+  JS_R
 };
 
 const key_override_t vol_key_override =
@@ -81,7 +90,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
      */
 
     [LY1] = LAYOUT(
-        KC_PGUP, KC_PGDN, KC_HOME, KC_END,  TG(LY2), TG(LY2), TG(LY2), TG(LY2),
+        KC_PGUP, KC_PGDN, KC_HOME, KC_END,  _______, _______, _______, _______,
         _______, _______, _______, _______, KC_LGUI, _______, KC_RGUI, _______,
         TB_PREC, _______, _______, _______, _______, _______, _______, _______,
 
@@ -89,28 +98,29 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6,   KC_F7,   KC_F8,
         KC_F9,   KC_F10,  KB_LOCK, KC_CAPS, _______, _______, _______, _______,
         _______, _______, _______, _______, _______, _______, KC_PGUP, KC_INS,
-        _______, _______, _______, _______, _______, _______, _______, KC_HOME,
+        _______, _______, _______, _______, _______, _______, TG(LY2), KC_HOME,
         KC_END,  KC_PGDN, _______, _______, KC_CUT, KC_COPY,  KC_PSTE, _______,
         _______, _______, KC_BRID, KC_BRIU, _______, _______, _______, _______,
         KC_DEL,  _______, QK_BOOT, QK_BOOT, BL_STEP, _______, _______, _______
     ),
 
     /*
-     * Layer 2: Gamepad (Toggled by Fn+G)
+     * Layer 2: Gamepad (Fn + G toggles it on and off: G is transparent here,
+     * so with Fn held it reaches TG(LY2) on the Fn layer)
      *
-     *   (JS_L)           (   ) (   )          ( Y ) ( X )
-     * (JS_U) (JS_D)                             ( B ) ( A )
-     *   (JS_R)                                   (   )
+     *   (JS↑)            ( L )                ( Y ) ( X )
+     * (JS←) (JS→)           ( R )                ( B ) ( A )
+     *   (JS↓)                                (o)
      *
      * (   )(Sel)(Sta)     (   )(   )(   )(   )(   )(   )(   )
-     * [Note: D-pad keys mapped to Joystick Axis]
+     * D-pad: joystick axes; A B X Y Sel Sta L R: joystick buttons 0-7
      */
     [LY2] = LAYOUT(
-        JS_LEFT, JS_RGHT, JS_UP,   JS_DOWN, JS_0,    JS_1,    JS_2,    JS_3,
-        _______, _______, _______, _______, _______, _______, _______, _______,
+        JS_LEFT, JS_RGHT, JS_UP,   JS_DOWN, JS_A,    JS_B,    JS_X,    JS_Y,
+        _______, _______, _______, _______, _______, JS_L,    _______, JS_R,
         _______, _______, _______, _______, _______, _______, _______, _______,
 
-        JS_4,    JS_5,    _______, _______, _______, _______, _______, _______,
+        JS_SEL,  JS_STA,  _______, _______, _______, _______, _______, _______,
         _______, _______, _______, _______, _______, _______, _______, _______,
         _______, _______, _______, _______, _______, _______, _______, _______,
         _______, _______, _______, _______, _______, _______, _______, _______,
@@ -182,6 +192,13 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       return false;
     case JS_DOWN:
       joystick_set_axis(0, record->event.pressed ? 127 : 0);
+      return false;
+    case JS_A ... JS_R:
+      if (record->event.pressed) {
+        register_joystick_button(keycode - JS_A);
+      } else {
+        unregister_joystick_button(keycode - JS_A);
+      }
       return false;
     case TB_PREC:
       if (record->event.pressed) {

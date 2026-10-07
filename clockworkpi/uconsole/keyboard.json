@@ -29,7 +29,7 @@
             "y": "virtual"
         },
         "axis_resolution": 8,
-        "button_count": 6,
+        "button_count": 8,
         "driver": "digital"
     },
     "matrix_pins": {

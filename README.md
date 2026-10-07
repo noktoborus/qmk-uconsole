@@ -37,14 +37,16 @@ Gamepad function is mapped to the following table:
 
 | Key    | Gamepad mode    | Keyboard mode
 |--------|-----------------|--------------
-| A      | `JS_0` (A)      | Browser Forward (`KC_WWW_FORWARD`)
-| B      | `JS_1` (B)      | Browser Back    (`KC_WWW_BACK`)
-| X      | `JS_2` (X)      | System Request (`KC_SYSTEM_REQUEST`)
-| Y      | `JS_3` (Y)      | Menu    (`KC_MENU`)
-| Select | `JS_4` (Select) | Select  (`KC_SELECT`)
-| Start  | `JS_5` (Start)  | Super   (`KC_LEFT_GUI`)
+| A      | `JS_A` (button 0) | Browser Forward (`KC_WWW_FORWARD`)
+| B      | `JS_B` (button 1) | Browser Back    (`KC_WWW_BACK`)
+| X      | `JS_X` (button 2) | System Request (`KC_SYSTEM_REQUEST`)
+| Y      | `JS_Y` (button 3) | Menu    (`KC_MENU`)
+| Select | `JS_SEL` (button 4) | Select  (`KC_SELECT`)
+| Start  | `JS_STA` (button 5) | Super   (`KC_LEFT_GUI`)
+| L      | `JS_L` (button 6) | Left mouse button  (`MS_BTN1`)
+| R      | `JS_R` (button 7) | Right mouse button (`MS_BTN2`)
 
-* **Gamepad mode:** Press **Fn+(X)** or Fn+any gamepad key
+* **Gamepad mode:** Press **Fn+G** to turn it on, and **Fn+G** again to turn it off
 
 * **Trackball Scrolling:** Hold the **Select** key and move the trackball to scroll.
     * Move Up/Down for Vertical Scroll
@@ -71,7 +73,7 @@ Use the following shortcuts to toggle hardware modes and special features:
 
 | Shortcut / Key Combo | Function | Description |
 |---|---|---|
-| **`Fn` + `A`/`B`/`X`/`Y`** | Gamepad Mode | Toggles Layer 2 (maps A/B/X/Y and D-Pad for gaming) |
+| **`Fn` + `G`** | Gamepad Mode | Toggles Layer 2 (maps A/B/X/Y and D-Pad for gaming) |
 
 ### Backlight
 `Fn` + `Space` cycles the backlight through 10 brightness levels and off.
@@ -99,7 +101,8 @@ the defaults described above, layer 3 is empty and free to configure. The
 keyboard is not in the VIA repository, so load its definition manually: in
 VIA open **Settings**, enable **Show Design tab**, then in **Design** load
 [`clockworkpi/uconsole/via.json`](clockworkpi/uconsole/via.json). The
-joystick, lock and precision mode keycodes are available under **Custom**.
+joystick axes, gamepad buttons, lock and precision mode keycodes are
+available under **Custom**.
 
 Trackball settings live in the **Trackball** tab of VIA: cursor speed,
 acceleration, precision mode speed, glide strength (how long the cursor keeps

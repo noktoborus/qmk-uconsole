@@ -230,6 +230,46 @@
       "name": "TB_PREC",
       "title": "Toggle trackball precision mode",
       "shortName": "Prec"
+    },
+    {
+      "name": "JS_A",
+      "title": "Gamepad A (button 0)",
+      "shortName": "JS A"
+    },
+    {
+      "name": "JS_B",
+      "title": "Gamepad B (button 1)",
+      "shortName": "JS B"
+    },
+    {
+      "name": "JS_X",
+      "title": "Gamepad X (button 2)",
+      "shortName": "JS X"
+    },
+    {
+      "name": "JS_Y",
+      "title": "Gamepad Y (button 3)",
+      "shortName": "JS Y"
+    },
+    {
+      "name": "JS_SEL",
+      "title": "Gamepad Select (button 4)",
+      "shortName": "JS Sel"
+    },
+    {
+      "name": "JS_STA",
+      "title": "Gamepad Start (button 5)",
+      "shortName": "JS Start"
+    },
+    {
+      "name": "JS_L",
+      "title": "Gamepad L (button 6)",
+      "shortName": "JS L"
+    },
+    {
+      "name": "JS_R",
+      "title": "Gamepad R (button 7)",
+      "shortName": "JS R"
     }
   ],
   "layouts": {
