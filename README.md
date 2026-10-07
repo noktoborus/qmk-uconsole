@@ -16,7 +16,7 @@ Unlike the standard QMK repository, this project isolates the uConsole keyboard 
 
 Test your uConsole keyboard layout and functionality with our interactive keyboard tester:
 
-**[https://j1n6.github.io/qmk-uconsole/](https://j1n6.github.io/qmk-uconsole/)**
+**[https://noktoborus.github.io/qmk-uconsole/](https://noktoborus.github.io/qmk-uconsole/)**
 
 This web-based tool provides:
 * **Visual Feedback:** See which keys are being pressed in real-time
@@ -275,10 +275,6 @@ If the trackball does not sit flush beneath the **uConsole** cover or exhibits s
 
 ![Shim Install Location](https://github.com/j1n6/qmk-uconsole/blob/main/images/3d-printed-tpu-shim.jpeg?raw=true)
 
-## ☕ Support My Work
-If you like my work, please consider [Buy me a Coffee](https://buy.stripe.com/00wfZi01WbPn14taZLeZ200). Thank you.
- 
- 
 ## 📜 License
 
 This project is licensed under the **GNU General Public License v3.0 (GPL-3.0)**.
@@ -291,5 +287,7 @@ For the full license text, see the [LICENSE](LICENSE) file in this repository or
 
 
 #### 🤝 Acknowledgments
+Thanks to **[j1n6](https://github.com/j1n6/qmk_firmware)** for base of this repo.
+
 Special thanks to **[oesmith](https://github.com/oesmith/qmk_firmware)** for the initial groundwork and porting the base layout to the uConsole hardware.
 
