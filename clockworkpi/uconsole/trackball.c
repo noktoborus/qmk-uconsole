@@ -29,6 +29,20 @@ volatile bool precision_mode = false; // toggled from keymap
 extern volatile bool is_locked;
 
 static int8_t distances[AXIS_NUM] = {0};
+
+// Sensor steps queued by the GPIO interrupts and processed in
+// pointing_device_driver_get_report(), so that the interrupts stay short and
+// all (software) floating point math runs in thread context.
+typedef struct {
+  uint16_t time;
+  uint8_t axis;
+  int8_t direction;
+} tb_event_t;
+
+#define TB_EVENT_QUEUE_SIZE 32 // power of two
+static tb_event_t event_queue[TB_EVENT_QUEUE_SIZE];
+static volatile uint8_t event_head = 0; // written by interrupts only
+static volatile uint8_t event_tail = 0; // written by the report task only
 static rate_meter_t rate_meters[AXIS_NUM] = {0};
 static glider_t gliders[AXIS_NUM] = {0};
 
@@ -118,11 +132,8 @@ static float rateToVelocityCurve(float input, float acceleration_scale) {
   return 0.12f + linear + accel;
 }
 
-static void trackball_move(uint8_t axis, int8_t direction) {
-  if (is_locked)
-    return;
+static void trackball_move(uint8_t axis, int8_t direction, uint16_t now) {
   // Check for idle reset
-  uint16_t now = timer_read();
   if (TIMER_DIFF_16(now, last_axis_activity[axis]) > 200) {
     consecutive_steps[axis] = 0;
     locked_direction[axis] = 0;
@@ -192,11 +203,11 @@ static void trackball_move(uint8_t axis, int8_t direction) {
 
   // Always run glider/rate meter updates to allow momentum in both modes
   {
-    rate_meter_interrupt(&rate_meters[axis]);
+    rate_meter_interrupt(&rate_meters[axis], now);
     glider_set_direction(&gliders[axis], direction);
 
-    const float rx = rate_meter_rate(&rate_meters[AXIS_X]);
-    const float ry = rate_meter_rate(&rate_meters[AXIS_Y]);
+    const float rx = rate_meter_rate(&rate_meters[AXIS_X], now);
+    const float ry = rate_meter_rate(&rate_meters[AXIS_Y], now);
 
     const float rate = sqrtf(rx * rx + ry * ry);
     const float dominant_rate = fmaxf(rx, ry);
@@ -249,21 +260,57 @@ static void trackball_move(uint8_t axis, int8_t direction) {
   }
 }
 
+// Called from the GPIO interrupts: only record the step.
+static void trackball_queue_step(uint8_t axis, int8_t direction) {
+  if (is_locked)
+    return;
+  const uint16_t now = timer_read();
+  chSysLockFromISR();
+  const uint8_t head = event_head;
+  // Drop the step if the queue is full (the report task fell behind)
+  if ((uint8_t)(head - event_tail) < TB_EVENT_QUEUE_SIZE) {
+    tb_event_t *ev = &event_queue[head & (TB_EVENT_QUEUE_SIZE - 1)];
+    ev->time = now;
+    ev->axis = axis;
+    ev->direction = direction;
+    event_head = head + 1;
+  }
+  chSysUnlockFromISR();
+}
+
 static void trackball_left(void *arg) {
   (void)arg;
-  trackball_move(AXIS_X, TB_DECR);
+  trackball_queue_step(AXIS_X, TB_DECR);
 }
 static void trackball_right(void *arg) {
   (void)arg;
-  trackball_move(AXIS_X, TB_INCR);
+  trackball_queue_step(AXIS_X, TB_INCR);
 }
 static void trackball_up(void *arg) {
   (void)arg;
-  trackball_move(AXIS_Y, TB_DECR);
+  trackball_queue_step(AXIS_Y, TB_DECR);
 }
 static void trackball_down(void *arg) {
   (void)arg;
-  trackball_move(AXIS_Y, TB_INCR);
+  trackball_queue_step(AXIS_Y, TB_INCR);
+}
+
+// Process the steps queued since the previous report, in order.
+static void trackball_process_steps(void) {
+  tb_event_t ev;
+  for (;;) {
+    chSysLock();
+    const uint8_t tail = event_tail;
+    if (tail == event_head) {
+      chSysUnlock();
+      return;
+    }
+    ev = event_queue[tail & (TB_EVENT_QUEUE_SIZE - 1)];
+    event_tail = tail + 1;
+    chSysUnlock();
+
+    trackball_move(ev.axis, ev.direction, ev.time);
+  }
 }
 
 bool pointing_device_driver_init(void) {
@@ -286,7 +333,10 @@ bool pointing_device_driver_init(void) {
 
 report_mouse_t pointing_device_driver_get_report(report_mouse_t mouse_report) {
   int8_t x = 0, y = 0, h = 0, v = 0;
-  chSysLock();
+
+  // Steps happened before this report, so apply them before the decay and
+  // mode-switch handling below (as when they were processed in the interrupt).
+  trackball_process_steps();
 
   const uint16_t now = timer_read();
   const uint16_t delta = TIMER_DIFF_16(now, last_report);
@@ -366,7 +416,6 @@ report_mouse_t pointing_device_driver_get_report(report_mouse_t mouse_report) {
     distances[AXIS_Y] = 0;
     break;
   }
-  chSysUnlock();
 
   mouse_report.x = x;
   mouse_report.y = y;
