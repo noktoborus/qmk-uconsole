@@ -28,9 +28,9 @@
             "QK_BOOT", "KC_TRNS", "KC_LGUI", "BL_STEP", "KC_RGUI", "KC_TRNS", "QK_BOOT"
         ],
         [
-            "JS_LEFT", "JS_L", "JS_Y", "JS_X",
-            "JS_UP", "JS_DOWN", "JS_R", "JS_B", "JS_A", "KC_TRNS",
-            "JS_RGHT",
+            "JS_UP", "JS_L", "JS_Y", "JS_X",
+            "JS_LEFT", "JS_RGHT", "JS_R", "JS_B", "JS_A", "KC_TRNS",
+            "JS_DOWN",
             "KC_TRNS", "JS_SEL", "JS_STA", "KC_TRNS", "KC_TRNS", "KC_TRNS", "KC_TRNS", "KC_TRNS", "KC_TRNS", "KC_TRNS",
             "KC_TRNS", "KC_TRNS", "KC_TRNS", "KC_TRNS", "KC_TRNS", "KC_TRNS", "KC_TRNS", "KC_TRNS", "KC_TRNS", "KC_TRNS", "KC_TRNS", "KC_TRNS",
             "KC_TRNS", "KC_TRNS", "KC_TRNS", "KC_TRNS", "KC_TRNS", "KC_TRNS", "KC_TRNS", "KC_TRNS", "KC_TRNS", "KC_TRNS", "KC_TRNS",
