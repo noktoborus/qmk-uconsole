@@ -10,7 +10,106 @@
     "qmk_lighting"
   ],
   "menus": [
-    "qmk_backlight",
+    {
+      "label": "Backlight",
+      "content": [
+        {
+          "label": "Backlight",
+          "content": [
+            {
+              "label": "Brightness",
+              "type": "range",
+              "options": [
+                0,
+                255
+              ],
+              "content": [
+                "id_qmk_backlight_brightness",
+                1,
+                1
+              ]
+            }
+          ]
+        },
+        {
+          "label": "Idle dimming",
+          "content": [
+            {
+              "label": "Idle timeout (s, 0 = off)",
+              "type": "range",
+              "options": [
+                0,
+                255
+              ],
+              "content": [
+                "id_bl_idle_timeout",
+                0,
+                16
+              ]
+            },
+            {
+              "label": "Dim fade time (0.1 s)",
+              "type": "range",
+              "options": [
+                1,
+                50
+              ],
+              "content": [
+                "id_bl_dim_fade",
+                0,
+                17
+              ],
+              "showIf": "{id_bl_idle_timeout} != 0"
+            },
+            {
+              "label": "Wake fade time (0.1 s)",
+              "type": "range",
+              "options": [
+                1,
+                50
+              ],
+              "content": [
+                "id_bl_wake_fade",
+                0,
+                18
+              ]
+            }
+          ]
+        },
+        {
+          "label": "Key press boost",
+          "content": [
+            {
+              "label": "Boost (%, 0 = off)",
+              "type": "range",
+              "options": [
+                0,
+                100
+              ],
+              "content": [
+                "id_bl_boost",
+                0,
+                21
+              ]
+            },
+            {
+              "label": "Boost fade time (0.1 s)",
+              "type": "range",
+              "options": [
+                1,
+                50
+              ],
+              "content": [
+                "id_bl_boost_fade",
+                0,
+                22
+              ],
+              "showIf": "{id_bl_boost} != 0"
+            }
+          ]
+        }
+      ]
+    },
     {
       "label": "Trackball",
       "content": [

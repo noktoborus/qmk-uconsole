@@ -55,11 +55,14 @@ typedef struct {
   uint8_t reserved[2];
 } trackball_config_t;
 
-_Static_assert(sizeof(trackball_config_t) == EECONFIG_KB_DATA_SIZE,
-               "EECONFIG_KB_DATA_SIZE must match trackball_config_t");
+// Stored at the start of the keyboard EEPROM datablock
+_Static_assert(sizeof(trackball_config_t) == 8, "trackball_config_t is 8 bytes");
 
 extern trackball_config_t trackball_config;
 
-/* Loads the settings from EEPROM, falling back to defaults if invalid. */
+void trackball_config_reset(void);
 void trackball_config_load(void);
+
+/* VIA custom values of the "Trackball" menu; false if value_id isn't ours. */
+bool trackball_via_command(uint8_t command_id, uint8_t value_id, uint8_t *value);
 #endif /* TRACKBALL_H */

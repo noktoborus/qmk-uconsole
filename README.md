@@ -75,6 +75,23 @@ Use the following shortcuts to toggle hardware modes and special features:
 
 ### Backlight
 `Fn` + `Space` cycles the backlight through 10 brightness levels and off.
+The **Backlight** tab in VIA configures:
+* **Brightness**.
+* **Idle dimming** (on by default): the backlight fades out after 5 s without
+  key presses or trackball movement and fades back in on activity. Timeout,
+  fade-out and fade-in times are adjustable; timeout 0 turns it off.
+* **Key press boost**: briefly brightens the backlight on every key press
+  (off by default), with adjustable strength and fade-out time.
+
+Both effects work on the same brightness, so switching between them is smooth.
+
+From the system, [`tools/uconsole-backlight`](tools/uconsole-backlight) reads or
+sets the level over the VIA protocol (`uconsole-backlight 3`; no argument prints
+the current level). It needs access to the keyboard's `/dev/hidraw` node: run it
+as root or add a udev rule:
+```
+KERNEL=="hidraw*", ATTRS{idVendor}=="434b", ATTRS{idProduct}=="5543", MODE="0660", TAG+="uaccess"
+```
 
 ### VIA
 The firmware supports [VIA](https://usevia.app) with 4 layers: layers 0-2 are

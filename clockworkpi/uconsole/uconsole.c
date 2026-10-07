@@ -1,5 +1,9 @@
 #include "quantum.h"
 #include "trackball.h"
+#include "backlight_fx.h"
+#ifdef VIA_ENABLE
+#    include "via.h"
+#endif
 
 // Helper to safely clear the backup register
 void clear_bootloader_flag(void) {
@@ -21,10 +25,41 @@ void keyboard_pre_init_kb(void) {
     keyboard_pre_init_user();
 }
 
+// Keyboard EEPROM datablock: trackball settings, then backlight effects
+void eeconfig_init_kb_datablock(void) {
+    trackball_config_reset();
+    backlight_fx_config_reset();
+}
+
 void keyboard_post_init_kb(void) {
-    trackball_config_load();
+    if (!eeconfig_is_kb_datablock_valid()) {
+        // EEPROM written by an older firmware (different layout or keymap):
+        // reset everything, including the VIA keymap. This also writes the
+        // defaults through eeconfig_init_kb_datablock().
+        eeconfig_init();
+    } else {
+        trackball_config_load();
+        backlight_fx_config_load();
+    }
     keyboard_post_init_user();
 }
+
+void housekeeping_task_kb(void) {
+    backlight_fx_task();
+    housekeeping_task_user();
+}
+
+#ifdef VIA_ENABLE
+void via_custom_value_command_kb(uint8_t *data, uint8_t length) {
+    // data = [ command_id, channel_id, value_id, value_data ]
+    uint8_t *command_id = &data[0];
+    if (data[1] != id_custom_channel ||
+        !(trackball_via_command(*command_id, data[2], &data[3]) ||
+          backlight_fx_via_command(*command_id, data[2], &data[3]))) {
+        *command_id = id_unhandled;
+    }
+}
+#endif
 
 void mcu_reset(void) {
     clear_bootloader_flag();
@@ -35,47 +70,3 @@ void bootloader_jump(void) {
     clear_bootloader_flag();
     NVIC_SystemReset();
 }
-
-#ifdef BACKLIGHT_ENABLE
-#    include <hal.h>
-#    define USER_PWM_MODE PWM_OUTPUT_ACTIVE_HIGH
-
-static PWMConfig pwmCFG = {
-    .frequency = 10000000, // 10MHz counter frequency
-    .period    = 2000,     // 2000 ticks period -> 5kHz PWM frequency (200us)
-    .callback  = NULL,
-    .channels  = {
-        {USER_PWM_MODE, NULL},
-        {PWM_OUTPUT_DISABLED, NULL},
-        {PWM_OUTPUT_DISABLED, NULL},
-        {PWM_OUTPUT_DISABLED, NULL}
-    },
-    .cr2       = 0,
-#    if defined(STM32_PWM_USE_ADVANCED) && STM32_PWM_USE_ADVANCED
-    .bdtr = 0,
-#    endif
-    .dier = 0
-};
-
-void backlight_init_ports(void) {
-    palSetPadMode(GPIOA, 8, PAL_MODE_STM32_ALTERNATE_PUSHPULL);
-    pwmStart(&PWMD1, &pwmCFG);
-}
-
-// Duty cycle (out of the 2000-tick period) for each backlight level;
-// growing by about sqrt(2) per step so the levels look evenly spaced.
-static const uint16_t backlight_duty[BACKLIGHT_LEVELS + 1] = {0, 88, 125, 177, 250, 354, 500, 707, 1000, 1414, 2000};
-
-void backlight_set(uint8_t level) {
-    if (level > BACKLIGHT_LEVELS) {
-        level = BACKLIGHT_LEVELS;
-    }
-    if (level == 0) {
-        pwmDisableChannel(&PWMD1, 0);
-    } else {
-        pwmEnableChannel(&PWMD1, 0, backlight_duty[level]);
-    }
-}
-
-void backlight_task(void) {}
-#endif

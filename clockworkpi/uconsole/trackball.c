@@ -1,4 +1,5 @@
 #include "trackball.h"
+#include "backlight_fx.h"
 #include "glider.h"
 #include "pointing_device.h"
 #include "quantum.h"
@@ -88,20 +89,13 @@ static void trackball_config_save(void) {
   eeconfig_update_kb_datablock(&trackball_config, 0, sizeof(trackball_config));
 }
 
-void eeconfig_init_kb_datablock(void) {
+void trackball_config_reset(void) {
   trackball_config = trackball_config_defaults;
   trackball_config_apply();
   trackball_config_save();
 }
 
 void trackball_config_load(void) {
-  if (!eeconfig_is_kb_datablock_valid()) {
-    // EEPROM written by an older firmware (different layout or keymap):
-    // reset everything, including the VIA keymap. This also writes the
-    // trackball defaults through eeconfig_init_kb_datablock().
-    eeconfig_init();
-    return;
-  }
   eeconfig_read_kb_datablock(&trackball_config, 0, sizeof(trackball_config));
   trackball_config_apply();
 }
@@ -133,6 +127,7 @@ static float rateToVelocityCurve(float input, float acceleration_scale) {
 }
 
 static void trackball_move(uint8_t axis, int8_t direction, uint16_t now) {
+  backlight_fx_activity(false);
   // Check for idle reset
   if (TIMER_DIFF_16(now, last_axis_activity[axis]) > 200) {
     consecutive_steps[axis] = 0;
@@ -458,36 +453,30 @@ static uint8_t *trackball_config_value(uint8_t value_id) {
   }
 }
 
-void via_custom_value_command_kb(uint8_t *data, uint8_t length) {
-  // data = [ command_id, channel_id, value_id, value_data ]
-  uint8_t *command_id = &data[0];
-  uint8_t *value = (data[1] == id_custom_channel)
-                       ? trackball_config_value(data[2])
-                       : NULL;
+bool trackball_via_command(uint8_t command_id, uint8_t value_id, uint8_t *value) {
+  uint8_t *field = trackball_config_value(value_id);
+  if (field == NULL)
+    return false;
 
-  if (value == NULL) {
-    *command_id = id_unhandled;
-    return;
-  }
-
-  switch (*command_id) {
+  switch (command_id) {
   case id_custom_set_value:
-    *value = data[3];
+    *field = *value;
     trackball_config_apply();
     break;
   case id_custom_get_value:
-    data[3] = *value;
+    *value = *field;
     break;
   case id_custom_save:
     trackball_config_save();
     break;
-  default:
-    *command_id = id_unhandled;
-    break;
   }
+  return true;
 }
 #endif // VIA_ENABLE
 
 bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
+  if (record->event.pressed) {
+    backlight_fx_activity(true);
+  }
   return process_record_user(keycode, record);
 }
